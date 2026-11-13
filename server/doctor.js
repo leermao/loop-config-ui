@@ -24,6 +24,39 @@ const OPTIONAL_COMMANDS = [
   { id: 'osascript', label: 'osascript', fix: 'macOS 通知兜底命令' }
 ];
 
+const DOCTOR_LAYOUT = new Map([
+  ['worktree', [10, 'core']],
+  ['path:repo', [11, 'core']],
+  ['command:claude', [20, 'core']],
+  ['command:codex', [21, 'core']],
+  ['command:agy', [22, 'core']],
+  ['launchd:main', [30, 'core']],
+  ['launchd:notify', [31, 'core']],
+  ['path:app', [35, 'core']],
+  ['path:runs', [36, 'core']],
+  ['path:main', [37, 'core']],
+  ['path:skill', [38, 'core']],
+  ['path:env', [39, 'core']],
+  ['queue', [40, 'core']],
+  ['credential:yunxiao', [50, 'integration']],
+  ['credential:gitlab', [51, 'integration']],
+  ['command:glab', [52, 'integration']],
+  ['glab:auth', [53, 'integration']],
+  ['version', [60, 'support']],
+  ['command:jq', [70, 'support']],
+  ['command:git', [71, 'support']],
+  ['command:timeout', [72, 'support']],
+  ['command:curl', [73, 'support']],
+  ['command:perl', [74, 'support']],
+  ['command:pnpm', [75, 'support']],
+  ['command:launchctl', [76, 'support']],
+  ['command:/usr/libexec/PlistBuddy', [77, 'support']],
+  ['pnpm:version', [80, 'support']],
+  ['node', [81, 'support']],
+  ['command:cmux', [90, 'support']],
+  ['command:osascript', [91, 'support']]
+]);
+
 function configTarget(label = '去配置', key = null) {
   return { view: 'config', label, key };
 }
@@ -201,15 +234,20 @@ export async function runDoctor(config, {
       : null
   });
 
+  const orderedItems = items.map((item) => {
+    const [priority, section] = DOCTOR_LAYOUT.get(item.id) ?? [500, 'support'];
+    return { ...item, priority, section };
+  }).sort((a, b) => a.priority - b.priority || a.label.localeCompare(b.label, 'zh-CN'));
+
   const summary = {
-    ok: items.filter((item) => item.status === 'ok').length,
-    warn: items.filter((item) => item.status === 'warn').length,
-    error: items.filter((item) => item.status === 'error').length
+    ok: orderedItems.filter((item) => item.status === 'ok').length,
+    warn: orderedItems.filter((item) => item.status === 'warn').length,
+    error: orderedItems.filter((item) => item.status === 'error').length
   };
   return {
     generatedAt: new Date().toISOString(),
     summary,
-    items,
+    items: orderedItems,
     envFile: config.envFile,
     environment: {
       node: process.version,

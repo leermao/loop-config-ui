@@ -90,6 +90,12 @@ test('doctor reports missing commands and paths with fixes', async (t) => {
     label: '去配置',
     key: null
   });
+  const order = (id) => report.items.findIndex((item) => item.id === id);
+  assert.ok(order('worktree') < order('command:claude'));
+  assert.ok(order('command:claude') < order('launchd:main'));
+  assert.ok(order('launchd:main') < order('credential:yunxiao'));
+  assert.ok(order('credential:yunxiao') < order('command:jq'));
+  assert.ok(order('command:jq') < order('pnpm:version'));
 });
 
 test('doctor reports invalid queue and dirty worktree', async (t) => {

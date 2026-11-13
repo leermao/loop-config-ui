@@ -18,7 +18,8 @@ const statusText = {
 };
 
 const grouped = computed(() => {
-  const items = props.report?.items ?? [];
+  const items = [...(props.report?.items ?? [])]
+    .sort((a, b) => (a.priority ?? 500) - (b.priority ?? 500));
   return [
     { id: 'error', label: '需要处理', items: items.filter((item) => item.status === 'error') },
     { id: 'warn', label: '建议检查', items: items.filter((item) => item.status === 'warn') },
@@ -61,7 +62,7 @@ function copyLabel(item) {
   <div v-else-if="loading && !report" class="doctor-loading">正在探测命令、路径、配置和版本…</div>
   <template v-else-if="report">
     <div v-for="group in grouped" :key="group.id" class="doctor-group">
-      <h3>{{ group.label }}</h3>
+      <h3>{{ group.label }} <span>{{ group.items.length }} 项</span></h3>
       <div class="doctor-grid">
         <article v-for="item in group.items" :key="item.id" class="doctor-item" :class="`status-${item.status}`">
           <div class="doctor-item-head">
@@ -138,6 +139,8 @@ function copyLabel(item) {
 }
 
 .doctor-group h3 {
+  display: flex;
+  justify-content: space-between;
   padding-bottom: 6px;
   margin: 0 0 8px;
   border-bottom: 1px solid var(--line);
@@ -146,6 +149,12 @@ function copyLabel(item) {
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+}
+
+.doctor-group h3 span {
+  color: var(--ink-muted);
+  font-size: 9px;
+  letter-spacing: 0;
 }
 
 .doctor-grid {

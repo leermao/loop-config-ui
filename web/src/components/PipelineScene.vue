@@ -1,8 +1,10 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { Pause, Play } from '@lucide/vue';
 
 import { formatDuration } from '../lib/format.js';
+
+const PipelineWebGL = defineAsyncComponent(() => import('./PipelineWebGL.vue'));
 
 const props = defineProps({
   stages: { type: Array, required: true },
@@ -19,6 +21,8 @@ const reducedMotion = ref(motionQuery.matches);
 const motionEnabled = ref(!motionQuery.matches);
 const sceneVisible = ref(true);
 const pageVisible = ref(!document.hidden);
+const webglReady = ref(false);
+const webglUnavailable = ref(false);
 const sweepActive = ref(false);
 const sweepKey = ref(0);
 const selectedIndex = ref(props.activeIndex >= 0 ? props.activeIndex : 0);
@@ -42,6 +46,7 @@ const motionActive = computed(() => (
   && pageVisible.value
   && !reducedMotion.value
 ));
+const showWebGL = computed(() => !reducedMotion.value && !webglUnavailable.value);
 
 const selectedStage = computed(() => props.stages[selectedIndex.value] || props.stages[0] || null);
 const selectedState = computed(() => stageState(selectedIndex.value));
@@ -80,6 +85,10 @@ watch(motionActive, (active) => {
   if (!active) resetPointer();
 });
 
+watch(showWebGL, (active) => {
+  if (!active) webglReady.value = false;
+});
+
 function stageState(index) {
   if (props.activeIndex < 0) return 'pending';
   if (index < props.activeIndex) return 'complete';
@@ -103,6 +112,15 @@ function toggleMotion() {
   if (reducedMotion.value) return;
   motionEnabled.value = !motionEnabled.value;
   if (!motionEnabled.value) resetPointer();
+}
+
+function markWebGLReady() {
+  webglReady.value = true;
+}
+
+function markWebGLUnavailable() {
+  webglReady.value = false;
+  webglUnavailable.value = true;
 }
 
 function handlePointerMove(event) {
@@ -203,6 +221,7 @@ onBeforeUnmount(() => {
     <div
       ref="viewportRef"
       class="scene-viewport"
+      :class="{ 'is-webgl': webglReady }"
       aria-hidden="true"
       @pointermove="handlePointerMove"
       @pointerleave="resetPointer"
@@ -223,6 +242,19 @@ onBeforeUnmount(() => {
             '--mote-duration': `${mote.duration.toFixed(2)}s`
           }"
         ></span>
+      </div>
+      <div v-if="showWebGL" class="scene-webgl-layer">
+        <Suspense>
+          <PipelineWebGL
+            :stages="stages"
+            :active-index="activeIndex"
+            :selected-index="selectedIndex"
+            :running="motionActive"
+            @ready="markWebGLReady"
+            @unavailable="markWebGLUnavailable"
+            @select-stage="selectStage"
+          />
+        </Suspense>
       </div>
       <div class="scene-deck">
         <span class="scene-rail"></span>
@@ -252,7 +284,7 @@ onBeforeUnmount(() => {
           </span>
         </span>
       </div>
-      <span v-if="sweepActive" :key="sweepKey" class="scene-stage-sweep"></span>
+      <span v-if="sweepActive && !webglReady" :key="sweepKey" class="scene-stage-sweep"></span>
     </div>
 
     <div class="stage-axis" role="group" aria-label="选择流水线工位">
@@ -524,6 +556,29 @@ onBeforeUnmount(() => {
 .scene-mote:nth-child(4n) {
   background: rgba(178, 128, 45, 0.5);
   box-shadow: 0 0 8px rgba(178, 128, 45, 0.28);
+}
+
+.scene-webgl-layer {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  pointer-events: none;
+}
+
+.scene-deck,
+.scene-grid,
+.scene-motes,
+.scene-horizon {
+  transition: opacity 320ms ease;
+}
+
+.scene-viewport.is-webgl .scene-deck,
+.scene-viewport.is-webgl .scene-grid,
+.scene-viewport.is-webgl .scene-motes,
+.scene-viewport.is-webgl .scene-horizon {
+  opacity: 0;
+  animation: none;
+  pointer-events: none;
 }
 
 .scene-deck {

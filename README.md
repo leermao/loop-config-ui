@@ -31,7 +31,7 @@ autofix-console/
 
 文件系统是唯一状态源。控制台只在 `.data/audit.jsonl` 保存动作审计，不建数据库。
 
-前端图表使用 ECharts，图标使用 Lucide；3D 工位使用零额外依赖的 CSS 3D，并在窄屏自动回退二维轨道。入场与图表动效遵循 `prefers-reduced-motion`。
+前端图表使用 ECharts，图标使用 Lucide；总览页的 3D 工位会懒加载本地锁定的 Three.js 场景，支持粒子数据流、全息扫描、工位点击与鼠标视差。系统开启减少动效或 WebGL 不可用时自动回退 CSS 3D，窄屏继续回退二维轨道；场景支持手动暂停。入场与图表动效遵循 `prefers-reduced-motion`。
 
 ## 安装
 

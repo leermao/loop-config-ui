@@ -25,6 +25,7 @@ import {
   formatDateTime,
   formatDuration,
   formatRelative,
+  linkSegments,
   parseEventLine,
   priorityLabel
 } from '../lib/format.js';
@@ -105,7 +106,9 @@ const healthCards = computed(() => [
     icon: BellRing,
     label: '通知任务',
     value: notifyTask.value.loaded ? '已加载' : '未加载',
-    detail: notifyTask.value.pid ? `PID ${notifyTask.value.pid}` : '每分钟推送一次进度',
+    detail: !notifyTask.value.loaded
+      ? '进度事件不会主动推送'
+      : `${notifyTask.value.pid ? `PID ${notifyTask.value.pid} · ` : ''}${notifyTask.value.feishuConfigured ? '飞书已接通' : '仅本地通知'}`,
     tone: notifyTask.value.loaded ? 'running' : 'warn'
   },
   {
@@ -172,6 +175,16 @@ function goLogs() {
   window.location.hash = '#/logs';
 }
 
+function openPipelineStage(stage) {
+  if (!stage) return;
+  if (stage.target === 'tasks') {
+    if (currentTask.value?.id) selectTask(currentTask.value.id);
+    window.location.hash = '#/tasks';
+    return;
+  }
+  window.location.hash = '#/logs';
+}
+
 onMounted(() => {
   timer = setInterval(() => {
     now.value = Date.now();
@@ -198,7 +211,12 @@ onBeforeUnmount(() => clearInterval(timer));
       </div>
     </header>
 
-    <StageRail :current-task="currentTask" :sync="snapshot?.sync" :status="status" />
+    <StageRail
+      :current-task="currentTask"
+      :sync="snapshot?.sync"
+      :status="status"
+      @open-stage="openPipelineStage"
+    />
 
     <OpsTelemetry
       :log-lines="snapshot?.recentLog || []"
@@ -338,7 +356,18 @@ onBeforeUnmount(() => clearInterval(timer));
           <article v-for="(item, index) in events" :key="`${item.time}-${index}`" class="event-row" :class="`tone-${item.tone}`">
             <time>{{ item.time || '—' }}</time>
             <span class="event-signal" aria-hidden="true"></span>
-            <p>{{ item.message }}</p>
+            <p>
+              <template v-for="(part, partIndex) in linkSegments(item.message)" :key="`${item.time}-${index}-${partIndex}`">
+                <a
+                  v-if="part.type === 'link'"
+                  class="event-link"
+                  :href="part.value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >{{ part.value }}</a>
+                <template v-else>{{ part.value }}</template>
+              </template>
+            </p>
           </article>
         </div>
         <div v-else class="empty-state">
@@ -795,6 +824,23 @@ onBeforeUnmount(() => clearInterval(timer));
   margin: 0;
   overflow-wrap: anywhere;
   font-size: var(--text-small);
+}
+
+.event-link {
+  color: var(--signal-dark);
+  text-decoration-color: rgba(154, 63, 38, 0.45);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+.event-link:hover {
+  color: var(--copper-dark);
+  text-decoration-color: currentColor;
+}
+
+.event-link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
 }
 
 .event-signal {

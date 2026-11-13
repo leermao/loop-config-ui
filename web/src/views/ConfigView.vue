@@ -1,12 +1,14 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue';
+import { ArrowUpRight, BellRing } from '@lucide/vue';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import DoctorPanel from '../components/DoctorPanel.vue';
 import { fetchConfig, fetchDoctor, saveConfig } from '../lib/api.js';
 import { sourceLabel } from '../lib/format.js';
-import { notify, runAction } from '../stores/console.js';
+import { notify, runAction, useConsoleStore } from '../stores/console.js';
 
+const consoleStore = useConsoleStore();
 const config = ref(null);
 const loading = ref(true);
 const loadError = ref('');
@@ -31,6 +33,13 @@ const changedEntries = computed(() => entries.value.filter((entry) => changedKey
 const restartNeeded = computed(() => changedEntries.value.some((entry) => entry.restart));
 const envEntries = computed(() => entries.value.filter((entry) => entry.source === 'env' || entry.source === 'environment'));
 const sensitiveEntryCount = computed(() => envEntries.value.filter((entry) => entry.sensitive).length);
+const feishuEntry = computed(() => entries.value.find((entry) => entry.key === 'FEISHU_WEBHOOK_URL') || null);
+const feishuConfigured = computed(() => Boolean(feishuEntry.value?.configured));
+const feishuDraft = computed(() => Boolean(
+  feishuEntry.value && Object.prototype.hasOwnProperty.call(drafts.value, feishuEntry.value.key)
+));
+const notifyTaskKnown = computed(() => Boolean(consoleStore.snapshot));
+const notifyTaskLoaded = computed(() => Boolean(consoleStore.snapshot?.notify?.loaded));
 const isRestartOperation = computed(() => saveMode.value !== 'save');
 const saveDialogTitle = computed(() => {
   if (saveMode.value === 'restart') return '重启主流水线';
@@ -215,6 +224,18 @@ function goOperations() {
   window.location.hash = '#/operations';
 }
 
+function revealFeishuConfig() {
+  switchTab('config');
+  groupFilter.value = '通知';
+  query.value = '';
+  nextTick(() => {
+    document.querySelector('[data-config-key="FEISHU_WEBHOOK_URL"]')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    });
+  });
+}
+
 onMounted(() => {
   loadConfig();
   loadDoctor();
@@ -241,7 +262,59 @@ onMounted(() => {
       </div>
     </header>
 
-    <div v-if="activeTab === 'config'" class="config-layout">
+    <template v-if="activeTab === 'config'">
+      <section v-if="config" class="notify-route panel" aria-labelledby="notify-route-title">
+        <header class="notify-route-head">
+          <span class="notify-route-icon" aria-hidden="true">
+            <BellRing :size="17" :stroke-width="1.7" />
+          </span>
+          <div class="notify-route-copy">
+            <p class="eyebrow">Notification route</p>
+            <h2 id="notify-route-title">通知链路</h2>
+            <p>进度事件每分钟读取一次；本地通知优先，飞书在配置 Webhook 后同步送达。</p>
+          </div>
+          <span
+            class="notify-task-state"
+            :class="!notifyTaskKnown ? 'is-unknown' : notifyTaskLoaded ? 'is-live' : 'is-idle'"
+          >
+            <span aria-hidden="true"></span>
+            {{ !notifyTaskKnown ? '正在读取任务状态' : notifyTaskLoaded ? '通知任务在线' : '通知任务未加载' }}
+          </span>
+        </header>
+
+        <div class="notify-route-grid">
+          <article class="notify-route-cell">
+            <span class="route-index">01 / 事件</span>
+            <strong>{{ notifyTaskLoaded ? '每分钟轮询' : '等待任务加载' }}</strong>
+            <small>status.sh → notify.sh</small>
+          </article>
+          <article class="notify-route-cell">
+            <span class="route-index">02 / 本地</span>
+            <strong>cmux / macOS</strong>
+            <small>优先 cmux，失败自动回退</small>
+          </article>
+          <article
+            class="notify-route-cell"
+            :class="{ connected: feishuConfigured, pending: feishuDraft }"
+          >
+            <span class="route-index">03 / 飞书</span>
+            <strong>{{ feishuConfigured ? '已接通' : '未配置' }}</strong>
+            <small>{{ feishuConfigured ? 'FEISHU_WEBHOOK_URL 已配置' : '配置后同步推送机器人' }}</small>
+            <span v-if="feishuDraft" class="route-draft">有未保存改动</span>
+          </article>
+          <div class="notify-route-actions">
+            <button class="button button-small" type="button" @click="revealFeishuConfig">
+              {{ feishuConfigured ? '调整飞书配置' : '配置飞书 Webhook' }}
+            </button>
+            <a class="notify-ops-link" href="#/operations">
+              通知运维
+              <ArrowUpRight :size="12" aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <div class="config-layout">
       <section class="config-main panel">
         <header class="config-head">
           <div>
@@ -394,8 +467,9 @@ onMounted(() => {
           <p>路径、模型、同步时段、token 等配置都在进程启动时读取；保存后可立即确认重启，也可稍后到运维页处理。</p>
           <button class="button button-small" type="button" @click="goOperations">查看运维操作</button>
         </section>
-      </aside>
-    </div>
+        </aside>
+      </div>
+    </template>
 
     <DoctorPanel
       v-else
@@ -476,6 +550,203 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 14px;
+}
+
+.notify-route {
+  position: relative;
+  overflow: hidden;
+  padding: 18px 20px 16px;
+  background:
+    linear-gradient(118deg, rgba(47, 117, 101, 0.08), transparent 46%),
+    rgba(248, 246, 239, 0.94);
+}
+
+.notify-route::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, var(--copper) 0 34px, transparent 34px 41px);
+  content: "";
+}
+
+.notify-route-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.notify-route-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(47, 117, 101, 0.28);
+  border-radius: var(--radius-small);
+  background: var(--copper-light);
+  color: var(--copper-dark);
+}
+
+.notify-route-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.notify-route-copy h2 {
+  margin: 0 0 2px;
+  font-size: 22px;
+}
+
+.notify-route-copy p:not(.eyebrow) {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.notify-task-state {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink-muted);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.notify-task-state > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-muted);
+}
+
+.notify-task-state.is-live {
+  border-color: rgba(47, 117, 101, 0.3);
+  background: var(--copper-light);
+  color: var(--copper-dark);
+}
+
+.notify-task-state.is-live > span {
+  background: var(--copper);
+  box-shadow: 0 0 0 3px rgba(47, 117, 101, 0.12);
+}
+
+.notify-task-state.is-idle {
+  border-color: rgba(178, 128, 45, 0.32);
+  background: var(--brass-light);
+  color: #7e591b;
+}
+
+.notify-task-state.is-idle > span {
+  background: var(--brass);
+}
+
+.notify-route-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(140px, auto);
+  gap: 1px;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.notify-route-cell {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-height: 72px;
+  padding: 11px 12px;
+  background: rgba(248, 246, 239, 0.92);
+}
+
+.notify-route-cell::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 2px;
+  background: transparent;
+  content: "";
+}
+
+.notify-route-cell.connected {
+  background: var(--copper-light);
+}
+
+.notify-route-cell.connected::before {
+  background: var(--copper);
+}
+
+.notify-route-cell.pending::before {
+  background: var(--brass);
+}
+
+.route-index {
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.notify-route-cell strong {
+  font-size: 12.5px;
+}
+
+.notify-route-cell small {
+  color: var(--ink-muted);
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.route-draft {
+  justify-self: start;
+  padding: 1px 5px;
+  border-radius: var(--radius-small);
+  background: var(--brass-light);
+  color: #7e591b;
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.notify-route-actions {
+  display: grid;
+  align-content: center;
+  justify-items: stretch;
+  gap: 5px;
+  padding: 9px 11px;
+  background: var(--paper-light);
+}
+
+.notify-ops-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 30px;
+  color: var(--signal-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.notify-ops-link:hover {
+  color: var(--copper-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.notify-ops-link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
 }
 
 .tab-switch {
@@ -890,6 +1161,17 @@ onMounted(() => {
 }
 
 @media (max-width: 900px) {
+  .notify-route-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .notify-route-actions {
+    grid-column: 1 / -1;
+    grid-template-columns: auto auto;
+    align-items: center;
+    justify-content: end;
+  }
+
   .tab-switch button,
   .filter-chip,
   .config-search,
@@ -904,6 +1186,24 @@ onMounted(() => {
   .config-toolbar {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .notify-route-head {
+    flex-wrap: wrap;
+  }
+
+  .notify-task-state {
+    margin-left: 48px;
+  }
+
+  .notify-route-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .notify-route-actions {
+    display: grid;
+    grid-column: auto;
+    grid-template-columns: 1fr;
   }
 
   .config-search {

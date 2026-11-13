@@ -83,6 +83,61 @@ export function parseEventLine(line) {
   };
 }
 
+const URL_TRAILING_PUNCTUATION = new Set([
+  '.', ',', ';', ':', '!', '?',
+  '，', '。', '；', '：', '！', '？', '、'
+]);
+const URL_CLOSING_PAIRS = {
+  ')': '(',
+  ']': '[',
+  '}': '{'
+};
+
+function trimUrlTrailing(value) {
+  let end = value.length;
+  while (end > 1) {
+    const char = value[end - 1];
+    if (URL_TRAILING_PUNCTUATION.has(char)) {
+      end -= 1;
+      continue;
+    }
+    const opening = URL_CLOSING_PAIRS[char];
+    if (opening) {
+      const prefix = value.slice(0, end);
+      const opens = [...prefix].filter((item) => item === opening).length;
+      const closes = [...prefix].filter((item) => item === char).length;
+      if (closes > opens) {
+        end -= 1;
+        continue;
+      }
+    }
+    break;
+  }
+  return value.slice(0, end);
+}
+
+export function linkSegments(text) {
+  const source = String(text ?? '');
+  const parts = [];
+  const pattern = /https?:\/\/[^\s<>"'`，。；：！？、（）【】《》「」]+/gi;
+  let cursor = 0;
+  let match;
+  while ((match = pattern.exec(source))) {
+    const url = trimUrlTrailing(match[0]);
+    if (!url) continue;
+    if (match.index > cursor) {
+      parts.push({ type: 'text', value: source.slice(cursor, match.index) });
+    }
+    parts.push({ type: 'link', value: url });
+    cursor = match.index + url.length;
+    pattern.lastIndex = cursor;
+  }
+  if (cursor < source.length) {
+    parts.push({ type: 'text', value: source.slice(cursor) });
+  }
+  return parts.length ? parts : [{ type: 'text', value: source }];
+}
+
 export function taskSourceLabel(source) {
   return {
     current: '当前任务',

@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, onMounted, ref } from 'vue';
+import { ArrowUpRight } from '@lucide/vue';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import StatusLamp from '../components/StatusLamp.vue';
@@ -63,12 +64,13 @@ const groups = [
     id: 'notify',
     index: '02',
     title: '通知',
-    note: '通知任务每分钟读取一次 status.sh，不调用模型。',
+    note: '通知任务每分钟读取一次 status.sh，不调用模型；本地优先，配置飞书 Webhook 后同步推送。',
+    configLink: { href: '#/config', label: '配置飞书' },
     actions: [
-      { id: 'notify.start', label: '启动通知任务', impact: '加载 com.autofix.notify，恢复每分钟事件推送。', confirm: 'run' },
+      { id: 'notify.start', label: '启动通知任务', impact: '加载 com.autofix.notify，恢复每分钟事件推送；已配置飞书时同步送达。', confirm: 'run' },
       { id: 'notify.stop', label: '停止通知任务', impact: '卸载 com.autofix.notify；主流水线不受影响。', confirm: 'run' },
       { id: 'notify.restart', label: '重启通知任务', impact: '重新加载通知任务；不会中断主流水线。', confirm: 'run' },
-      { id: 'notify.send', label: '立即发送一次通知', impact: '执行 notify.sh；会消费当前未发送事件。', confirm: 'run' }
+      { id: 'notify.send', label: '立即发送一次通知', impact: '执行 notify.sh；本地优先，配置 FEISHU_WEBHOOK_URL 后同步发送飞书，并消费当前未发送事件。', confirm: 'run' }
     ]
   },
   {
@@ -206,7 +208,13 @@ onMounted(() => {
               <h2>{{ group.title }}</h2>
               <p>{{ group.note }}</p>
             </div>
-            <span class="badge">{{ group.actions.length }} 个动作</span>
+            <div class="ops-group-meta">
+              <a v-if="group.configLink" class="ops-config-link" :href="group.configLink.href">
+                {{ group.configLink.label }}
+                <ArrowUpRight :size="12" aria-hidden="true" />
+              </a>
+              <span class="badge">{{ group.actions.length }} 个动作</span>
+            </div>
           </header>
           <div class="action-list">
             <article
@@ -410,6 +418,34 @@ onMounted(() => {
   font-size: 11.5px;
   font-weight: 700;
   box-shadow: inset 0 -2px 0 rgba(214, 90, 52, 0.2);
+}
+
+.ops-group-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.ops-config-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--signal-dark);
+  font-size: 10.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.ops-config-link:hover {
+  color: var(--copper-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ops-config-link:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
 }
 
 .ops-group-head h2 {
@@ -651,8 +687,11 @@ onMounted(() => {
     grid-template-columns: 36px minmax(0, 1fr);
   }
 
-  .ops-group-head > .badge {
+  .ops-group-meta {
     grid-column: 2;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
   }
 
   .action-card {

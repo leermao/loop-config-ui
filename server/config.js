@@ -24,6 +24,8 @@ export const CONFIG_SCHEMA = [
   { key: 'GITLAB_TOKEN', group: 'GitLab', label: 'GitLab 访问令牌', default: '', sensitive: true, restart: true, help: '留空时使用 glab auth login 的凭据。' },
   { key: 'GITLAB_HOST', group: 'GitLab', label: 'GitLab Host', default: 'code.lingyiwanwu.net', restart: true },
 
+  { key: 'FEISHU_WEBHOOK_URL', group: '通知', label: '飞书机器人 Webhook', default: '', sensitive: true, restart: false, help: '配置后下一轮通知会自动推送飞书；留空只保留 cmux / macOS 通知。' },
+
   { key: 'AUTOFIX_MAIN', group: '路径', label: '主仓库', default: '${HOME}/01/hbp-editor', restart: true },
   { key: 'AUTOFIX_REPO', group: '路径', label: '流水线 worktree', default: '${HOME}/autofix/worktree', restart: true },
   { key: 'AUTOFIX_HOME', group: '路径', label: '状态目录', default: '${HOME}/autofix/runs', restart: true },
@@ -50,6 +52,9 @@ export function isSensitiveKey(key, value = '') {
     return true;
   }
   if (/(?:^|_)(?:DATABASE|REDIS|MONGO|MYSQL|POSTGRES|PG|AMQP|BROKER)_?(?:URL|URI|DSN)$/i.test(key)) {
+    return true;
+  }
+  if (/(?:^|_)(?:WEBHOOK|HOOK)(?:_?(?:URL|URI))?$/i.test(key)) {
     return true;
   }
   if (/(?:^|_)(?:URL|URI|DSN)$/i.test(key) && /(?:token|key|secret|password|passwd|auth)=/i.test(String(value))) {

@@ -67,6 +67,12 @@ test('loadConsoleConfig applies environment > env file > default', async (t) => 
   assert.equal(token.sensitive, true);
   assert.equal(token.value, null);
   assert.equal(token.display, '已配置');
+
+  const feishu = config.entries.find((entry) => entry.key === 'FEISHU_WEBHOOK_URL');
+  assert.equal(feishu.group, '通知');
+  assert.equal(feishu.sensitive, true);
+  assert.equal(feishu.value, null);
+  assert.equal(feishu.display, '未配置');
 });
 
 test('loadConsoleConfig previews extra env keys and masks sensitive values', async (t) => {
@@ -75,7 +81,9 @@ test('loadConsoleConfig previews extra env keys and masks sensitive values', asy
     'FEATURE_PREVIEW="on"',
     'OPENAI_API_KEY="sk-very-secret"',
     'DATABASE_URL="postgres://user:pass@db.example/app"',
-    'REQUEST_URL="https://example.com/path?token=secret"'
+    'REQUEST_URL="https://example.com/path?token=secret"',
+    'FEISHU_WEBHOOK_URL="https://open.feishu.cn/open-apis/bot/v2/hook/feishu-secret"',
+    'DINGTALK_WEBHOOK_URL="https://oapi.dingtalk.com/robot/send?access_token=dingtalk-secret"'
   ].join('\n'));
 
   const config = loadConsoleConfig({ home, env: {} });
@@ -86,11 +94,16 @@ test('loadConsoleConfig previews extra env keys and masks sensitive values', asy
   assert.equal(entries.get('FEATURE_PREVIEW').editable, false);
   assert.equal(entries.get('FEATURE_PREVIEW').displayOnly, true);
 
-  for (const key of ['OPENAI_API_KEY', 'DATABASE_URL', 'REQUEST_URL']) {
+  for (const key of ['OPENAI_API_KEY', 'DATABASE_URL', 'REQUEST_URL', 'FEISHU_WEBHOOK_URL', 'DINGTALK_WEBHOOK_URL']) {
     assert.equal(entries.get(key).sensitive, true);
     assert.equal(entries.get(key).value, null);
   }
-  assert.doesNotMatch(JSON.stringify(config.entries), /sk-very-secret|user:pass|token=secret/);
+  assert.equal(entries.get('FEISHU_WEBHOOK_URL').display, '已配置');
+  assert.equal(entries.get('DINGTALK_WEBHOOK_URL').display, '已脱敏');
+  assert.doesNotMatch(
+    JSON.stringify(config.entries),
+    /sk-very-secret|user:pass|token=secret|feishu-secret|dingtalk-secret/
+  );
 });
 
 test('saveEnvUpdates keeps comments and creates a backup', async (t) => {
@@ -145,5 +158,7 @@ test('isSensitiveKey covers common credential names and URLs', () => {
   assert.equal(isSensitiveKey('SERVICE_PASSWORD'), true);
   assert.equal(isSensitiveKey('DATABASE_URL'), true);
   assert.equal(isSensitiveKey('REQUEST_URL', 'https://example.com/path?token=secret'), true);
+  assert.equal(isSensitiveKey('FEISHU_WEBHOOK_URL'), true);
+  assert.equal(isSensitiveKey('DINGTALK_WEBHOOK_URL'), true);
   assert.equal(isSensitiveKey('PUBLIC_HOST'), false);
 });

@@ -26,7 +26,14 @@ import { refreshState, startConsole, useConsoleStore } from './stores/console.js
 const store = useConsoleStore();
 const route = ref('overview');
 const clock = ref(new Date());
+const pageStageRef = ref(null);
 let clockTimer;
+let revealObserver = null;
+let revealMutation = null;
+let revealMotionQuery = null;
+let revealMotionHandler = null;
+
+const revealSeen = new WeakSet();
 
 const routes = [
   { id: 'overview', label: '总览', icon: LayoutDashboard, hint: '运行态与阶段' },
@@ -83,9 +90,59 @@ function retryConnection() {
   refreshState().catch(() => {});
 }
 
+function revealAllSections() {
+  pageStageRef.value?.querySelectorAll('.reveal-section').forEach((element) => {
+    element.classList.add('is-revealed');
+  });
+}
+
+function setupSectionReveal() {
+  const root = pageStageRef.value;
+  if (!root) return;
+  revealMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if ('IntersectionObserver' in window) {
+    revealObserver = new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        entry.target.classList.add('is-revealed');
+        revealObserver.unobserve(entry.target);
+      }
+    }, {
+      threshold: 0.08,
+      rootMargin: '0px 0px -6% 0px'
+    });
+  }
+
+  const scan = () => {
+    const view = root.querySelector('.view');
+    if (!view) return;
+    [...view.children].forEach((element, index) => {
+      if (!(element instanceof HTMLElement) || revealSeen.has(element)) return;
+      revealSeen.add(element);
+      element.classList.add('reveal-section');
+      element.style.setProperty('--reveal-delay', `${Math.min(index, 5) * 55}ms`);
+      if (revealMotionQuery.matches || !revealObserver) {
+        element.classList.add('is-revealed');
+      } else {
+        revealObserver.observe(element);
+      }
+    });
+  };
+
+  revealMutation = new MutationObserver(scan);
+  revealMutation.observe(root, { childList: true });
+  revealMotionHandler = (event) => {
+    if (event.matches) revealAllSections();
+  };
+  revealMotionQuery.addEventListener('change', revealMotionHandler);
+  scan();
+}
+
 onMounted(() => {
   routeFromHash();
   window.addEventListener('hashchange', routeFromHash);
+  setupSectionReveal();
   clockTimer = setInterval(() => {
     clock.value = new Date();
   }, 1000);
@@ -94,6 +151,11 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('hashchange', routeFromHash);
+  revealObserver?.disconnect();
+  revealMutation?.disconnect();
+  if (revealMotionQuery && revealMotionHandler) {
+    revealMotionQuery.removeEventListener('change', revealMotionHandler);
+  }
   clearInterval(clockTimer);
 });
 </script>
@@ -170,7 +232,7 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <main class="page-stage">
+      <main ref="pageStageRef" class="page-stage">
         <Transition name="view" mode="out-in">
           <component :is="activeView" :key="route" />
         </Transition>
@@ -497,19 +559,33 @@ onBeforeUnmount(() => {
 
 .view-enter-active,
 .view-leave-active {
+  will-change: opacity, transform, filter;
+}
+
+.view-enter-active {
+  transition:
+    opacity 280ms ease,
+    transform 420ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 320ms ease;
+}
+
+.view-leave-active {
   transition:
     opacity 140ms ease,
-    transform 140ms ease;
+    transform 180ms ease,
+    filter 140ms ease;
 }
 
 .view-enter-from {
   opacity: 0;
-  transform: translateY(5px);
+  filter: blur(4px);
+  transform: translateY(10px) scale(0.995);
 }
 
 .view-leave-to {
   opacity: 0;
-  transform: translateY(-3px);
+  filter: blur(2px);
+  transform: translateY(-4px) scale(1.002);
 }
 
 .toast-enter-active,

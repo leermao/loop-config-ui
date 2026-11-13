@@ -78,12 +78,15 @@ test('running state combines launchd, lock, queue and current task', async (t) =
     'launchctl list': { code: 0, stdout: `${process.pid}\t0\tcom.autofix\n${process.pid}\t0\tcom.autofix.notify\n`, stderr: '' },
     [PGREP_KEY]: { code: 0, stdout: `${process.pid} /bin/bash /Users/admin/autofix/app/scripts/run.sh\n`, stderr: '' }
   });
-  const service = createSnapshotService(configFrom(paths), { run });
+  const config = configFrom(paths);
+  config.values = new Map([['FEISHU_WEBHOOK_URL', 'https://open.feishu.cn/open-apis/bot/v2/hook/test']]);
+  const service = createSnapshotService(config, { run });
   const state = await service.build();
 
   assert.equal(state.status, 'running');
   assert.equal(state.main.loaded, true);
   assert.equal(state.notify.loaded, true);
+  assert.equal(state.notify.feishuConfigured, true);
   assert.equal(state.queue.count, 2);
   assert.equal(state.queue.items[0].serialNumber, 'P-1');
   assert.equal(state.currentTask.subject, '第一个任务');

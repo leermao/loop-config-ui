@@ -2,6 +2,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 
 import { runCommand } from './command.js';
+import { loadConsoleConfig } from './config.js';
 import { readLogChunk, readTail } from './logs.js';
 import {
   pathExists,
@@ -159,7 +160,17 @@ export function createSnapshotService(config, {
 } = {}) {
   let launchCache = { at: 0, value: null };
   let worktreeCache = { at: 0, value: null };
+  let configCache = { at: 0, value: null };
   let lastLogOffset = 0;
+
+  function currentConfigValues() {
+    if (!config.loadOptions) return config.values;
+    const at = now();
+    if (configCache.value && at - configCache.at < 5_000) return configCache.value;
+    const current = loadConsoleConfig(config.loadOptions);
+    configCache = { at, value: current.values };
+    return current.values;
+  }
 
   async function launchctlState() {
     const at = now();
@@ -263,6 +274,7 @@ export function createSnapshotService(config, {
       ?? null;
     const main = mainLabel ? labels.get(mainLabel) : null;
     const notify = labels.get('com.autofix.notify') ?? null;
+    const feishuConfigured = String(currentConfigValues()?.get?.('FEISHU_WEBHOOK_URL') ?? '').trim() !== '';
     const runAlive = processes.alive;
     const mainRunAlive = processes.mainRunAlive;
     const mainLoaded = Boolean(main);
@@ -346,7 +358,8 @@ export function createSnapshotService(config, {
       notify: {
         loaded: Boolean(notify),
         pid: notify?.pid ?? null,
-        exitStatus: notify?.status ?? null
+        exitStatus: notify?.status ?? null,
+        feishuConfigured
       },
       versions,
       queue: {

@@ -1,7 +1,9 @@
 <script setup>
-import { computed } from 'vue';
+import { computed, defineAsyncComponent, onBeforeUnmount, onMounted, ref } from 'vue';
 
 import { formatDuration, formatRelative } from '../lib/format.js';
+
+const PipelineScene = defineAsyncComponent(() => import('./PipelineScene.vue'));
 
 const props = defineProps({
   currentTask: { type: Object, default: null },
@@ -9,15 +11,22 @@ const props = defineProps({
   status: { type: String, default: 'stopped' }
 });
 
+const emit = defineEmits(['open-stage']);
+
 const stages = [
-  { code: 'SYNC', label: '同步' },
-  { code: 'DESIGN', label: '设计' },
-  { code: 'FIX', label: '修复' },
-  { code: 'TEST', label: '测试' },
-  { code: 'REVIEW', label: 'Review' },
-  { code: 'COMMIT', label: 'Commit' },
-  { code: 'SETTLE', label: '结算' }
+  { code: 'SYNC', label: '同步', description: '同步队列与基线，确认本轮工作区起点。', target: 'logs' },
+  { code: 'DESIGN', label: '设计', description: '定位缺陷路径，整理修复方案与影响面。', target: 'tasks' },
+  { code: 'FIX', label: '修复', description: '在独立 worktree 中执行代码修复。', target: 'tasks' },
+  { code: 'TEST', label: '测试', description: '运行回归用例与构建，验证修复结果。', target: 'logs' },
+  { code: 'REVIEW', label: 'Review', description: '检查改动质量与遗漏，补齐 review 发现。', target: 'tasks' },
+  { code: 'COMMIT', label: 'Commit', description: '整理提交，并记录本轮修复证据。', target: 'tasks' },
+  { code: 'SETTLE', label: '结算', description: '回收任务结果，更新队列与事件流。', target: 'logs' }
 ];
+
+const narrowMedia = window.matchMedia('(max-width: 720px)');
+const isNarrow = ref(narrowMedia.matches);
+const viewMode = ref('3d');
+const effectiveView = computed(() => isNarrow.value ? 'flat' : viewMode.value);
 
 const activeIndex = computed(() => {
   const stage = props.currentTask?.stage || '';
@@ -35,6 +44,19 @@ const syncLabel = computed(() => {
   if (!props.sync?.lastSyncAt) return '尚未同步';
   return `上次同步 ${formatRelative(props.sync.lastSyncAt)}`;
 });
+
+function handleNarrowChange(event) {
+  isNarrow.value = event.matches;
+}
+
+onMounted(() => {
+  isNarrow.value = narrowMedia.matches;
+  narrowMedia.addEventListener('change', handleNarrowChange);
+});
+
+onBeforeUnmount(() => {
+  narrowMedia.removeEventListener('change', handleNarrowChange);
+});
 </script>
 
 <template>
@@ -49,29 +71,63 @@ const syncLabel = computed(() => {
         <span v-if="currentTask?.elapsedSeconds != null" class="elapsed">
           本阶段 {{ formatDuration(currentTask.elapsedSeconds) }}
         </span>
+        <div v-if="!isNarrow" class="view-switch" role="group" aria-label="流水线视图">
+          <button
+            type="button"
+            :class="{ active: effectiveView === 'flat' }"
+            :aria-pressed="effectiveView === 'flat'"
+            @click="viewMode = 'flat'"
+          >
+            轨道
+          </button>
+          <button
+            type="button"
+            :class="{ active: effectiveView === '3d' }"
+            :aria-pressed="effectiveView === '3d'"
+            @click="viewMode = '3d'"
+          >
+            3D
+          </button>
+        </div>
       </div>
     </div>
-    <ol class="stage-rail" :class="`status-${status}`">
-      <li
-        v-for="(stage, index) in stages"
-        :key="stage.code"
-        class="stage-node"
-        :class="{
-          complete: activeIndex > index,
-          active: activeIndex === index,
-          pending: activeIndex < index || activeIndex === -1
-        }"
-        :aria-current="activeIndex === index ? 'step' : undefined"
-      >
-        <span class="node-marker">
-          <span class="node-index">{{ String(index + 1).padStart(2, '0') }}</span>
-        </span>
-        <span class="node-copy">
-          <span class="node-code">{{ stage.code }}</span>
-          <span class="node-label">{{ stage.label }}</span>
-        </span>
-      </li>
-    </ol>
+    <div class="stage-shell">
+      <template v-if="effectiveView === '3d'">
+        <Suspense>
+          <PipelineScene
+            :stages="stages"
+            :active-index="activeIndex"
+            :current-task="currentTask"
+            :status="status"
+            @open-stage="emit('open-stage', $event)"
+          />
+          <template #fallback>
+            <div class="scene-loading" role="status">正在装配 3D 工位…</div>
+          </template>
+        </Suspense>
+      </template>
+      <ol v-else class="stage-rail" :class="`status-${status}`">
+        <li
+          v-for="(stage, index) in stages"
+          :key="stage.code"
+          class="stage-node"
+          :class="{
+            complete: activeIndex > index,
+            active: activeIndex === index,
+            pending: activeIndex < index || activeIndex === -1
+          }"
+          :aria-current="activeIndex === index ? 'step' : undefined"
+        >
+          <span class="node-marker">
+            <span class="node-index">{{ String(index + 1).padStart(2, '0') }}</span>
+          </span>
+          <span class="node-copy">
+            <span class="node-code">{{ stage.code }}</span>
+            <span class="node-label">{{ stage.label }}</span>
+          </span>
+        </li>
+      </ol>
+    </div>
   </section>
 </template>
 
@@ -130,7 +186,7 @@ const syncLabel = computed(() => {
 .stage-meta-right {
   display: grid;
   justify-items: end;
-  gap: 2px;
+  gap: 4px;
   color: var(--ink-muted);
   font-size: 12.5px;
 }
@@ -139,6 +195,54 @@ const syncLabel = computed(() => {
   color: var(--ink);
   font-family: var(--font-mono);
   font-size: 11.5px;
+}
+
+.view-switch {
+  display: inline-flex;
+  padding: 2px;
+  margin-top: 2px;
+  border: 1px solid var(--line);
+  background: rgba(241, 239, 232, 0.74);
+}
+
+.view-switch button {
+  min-width: 40px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+}
+
+.view-switch button:hover {
+  color: var(--ink);
+}
+
+.view-switch button.active {
+  background: var(--ink);
+  color: var(--paper-light);
+}
+
+.stage-shell {
+  position: relative;
+  z-index: 1;
+}
+
+.scene-loading {
+  display: grid;
+  place-items: center;
+  min-height: 286px;
+  border: 1px solid var(--line);
+  background: rgba(248, 246, 239, 0.72);
+  color: var(--ink-muted);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
 }
 
 .stage-rail {

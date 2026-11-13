@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 
 import StatusLamp from '../components/StatusLamp.vue';
 import { fetchLogChunk, fetchLogSources, logDownloadUrl, logStreamUrl } from '../lib/api.js';
-import { formatBytes, formatDateTime } from '../lib/format.js';
+import { formatBytes, formatDateTime, linkSegments } from '../lib/format.js';
 import { notify, useConsoleStore } from '../stores/console.js';
 
 const store = useConsoleStore();
@@ -387,7 +387,17 @@ onBeforeUnmount(disconnect);
             :class="`tone-${lineTone(line)}`"
           >
             <span class="line-number">{{ String(index + 1).padStart(4, '0') }}</span>
-            <span class="line-copy">{{ line || ' ' }}</span>
+            <span class="line-copy">
+              <template v-for="(part, partIndex) in linkSegments(line || ' ')" :key="`${index}-${partIndex}`">
+                <a
+                  v-if="part.type === 'link'"
+                  :href="part.value"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >{{ part.value }}</a>
+                <template v-else>{{ part.value }}</template>
+              </template>
+            </span>
           </div>
         </div>
         <footer class="viewer-foot">
@@ -651,6 +661,22 @@ onBeforeUnmount(disconnect);
 .line-copy {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
+}
+
+.line-copy a {
+  color: #9bd4c4;
+  text-decoration-color: rgba(155, 212, 196, 0.45);
+  text-underline-offset: 2px;
+}
+
+.line-copy a:hover {
+  color: #c8ebe2;
+  text-decoration-color: currentColor;
+}
+
+.line-copy a:focus-visible {
+  outline: 2px solid #9bd4c4;
+  outline-offset: 2px;
 }
 
 .tone-danger .line-copy {

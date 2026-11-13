@@ -441,19 +441,41 @@ onMounted(() => {
 <style scoped>
 .view {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .view-heading {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.view-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 96px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
+  content: "";
 }
 
 .view-subtitle {
+  max-width: 690px;
   margin: 0;
   color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
 }
 
 .tab-switch {
@@ -465,13 +487,13 @@ onMounted(() => {
 }
 
 .tab-switch button {
-  min-height: 31px;
-  padding: 4px 12px;
+  min-height: 33px;
+  padding: 5px 13px;
   border: 0;
-  border-radius: 2px;
+  border-radius: var(--radius-small);
   background: transparent;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   cursor: pointer;
 }
@@ -479,17 +501,18 @@ onMounted(() => {
 .tab-switch button.active {
   background: var(--ink);
   color: var(--paper-light);
+  box-shadow: inset 0 -2px 0 var(--signal);
 }
 
 .config-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 250px;
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
 .config-main {
-  padding: 19px;
+  padding: 21px;
 }
 
 .config-head {
@@ -497,7 +520,7 @@ onMounted(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding-bottom: 14px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -524,7 +547,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 13px 0;
+  padding: 14px 0;
 }
 
 .group-filter {
@@ -534,13 +557,13 @@ onMounted(() => {
 }
 
 .filter-chip {
-  min-height: 29px;
-  padding: 4px 9px;
+  min-height: 31px;
+  padding: 5px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-small);
   background: transparent;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 10.5px;
   cursor: pointer;
 }
 
@@ -564,11 +587,11 @@ onMounted(() => {
 
 .config-search input {
   width: 100%;
-  min-height: 33px;
+  min-height: 35px;
   border: 0;
   outline: 0;
   background: transparent;
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 .save-result {
@@ -591,7 +614,7 @@ onMounted(() => {
 .save-result span {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .save-result .badge {
@@ -613,7 +636,7 @@ onMounted(() => {
 .group-title h3 {
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
@@ -621,7 +644,7 @@ onMounted(() => {
 .group-title span {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .config-table {
@@ -632,7 +655,7 @@ onMounted(() => {
   display: grid;
   grid-template-columns: minmax(210px, 0.78fr) minmax(0, 1.2fr);
   gap: 15px;
-  padding: 11px 5px;
+  padding: 12px 5px;
   border-bottom: 1px dashed var(--line);
 }
 
@@ -651,17 +674,17 @@ onMounted(() => {
 }
 
 .config-key strong {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .config-key code {
   color: var(--signal-dark);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .config-key small {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .config-value {
@@ -678,23 +701,23 @@ onMounted(() => {
 .value-input .input {
   padding-right: 82px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .secret-state {
   position: absolute;
   right: 7px;
   padding: 2px 5px;
-  border-radius: 3px;
+  border-radius: var(--radius-small);
   background: var(--brass-light);
   color: #7e591b;
-  font-size: 8px;
+  font-size: 9.5px;
   font-weight: 700;
 }
 
 .secret-state.configured {
   background: var(--copper-light);
-  color: var(--copper);
+  color: var(--copper-dark);
 }
 
 .value-meta {
@@ -717,7 +740,7 @@ onMounted(() => {
   border-radius: var(--radius);
   background: var(--ink);
   color: var(--paper-light);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-small);
 }
 
 .save-bar strong,
@@ -727,7 +750,7 @@ onMounted(() => {
 
 .save-bar span {
   color: rgba(248, 246, 239, 0.55);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .config-aside {
@@ -750,7 +773,7 @@ onMounted(() => {
   padding-left: 16px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .config-note li + li {
@@ -759,7 +782,7 @@ onMounted(() => {
 
 .config-note p {
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .config-loading {
@@ -778,7 +801,7 @@ onMounted(() => {
   border-left: 3px solid var(--danger);
   background: var(--danger-light);
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .change-list {
@@ -794,12 +817,12 @@ onMounted(() => {
   align-items: center;
   padding: 8px 9px;
   background: var(--paper);
-  font-size: 10px;
+  font-size: 11px;
 }
 
 .change-row code {
   overflow-wrap: anywhere;
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .change-row span {
@@ -808,7 +831,7 @@ onMounted(() => {
 
 .change-row strong {
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .restart-note {
@@ -821,12 +844,12 @@ onMounted(() => {
 
 .restart-note strong {
   color: var(--danger);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .restart-note span {
   color: var(--ink-soft);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
@@ -840,19 +863,19 @@ onMounted(() => {
 
 .backup-note span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .backup-note code {
   overflow-wrap: anywhere;
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .save-error {
   margin: 10px 0 0;
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 @media (max-width: 1050px) {
@@ -863,6 +886,15 @@ onMounted(() => {
   .config-aside {
     position: static;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .tab-switch button,
+  .filter-chip,
+  .config-search,
+  .config-search input {
+    min-height: 44px;
   }
 }
 

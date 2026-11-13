@@ -120,7 +120,7 @@ onBeforeUnmount(() => {
   border-top: 4px solid var(--signal);
   border-radius: var(--radius);
   background: var(--paper-light);
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
+  box-shadow: var(--shadow-float);
 }
 
 .dialog-card.tone-danger {
@@ -147,11 +147,19 @@ onBeforeUnmount(() => {
   height: 32px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 50%;
+  border-radius: var(--radius);
   background: transparent;
   font-size: 22px;
   line-height: 1;
   cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.dialog-x:hover:not(:disabled) {
+  border-color: var(--line-strong);
+  background: var(--paper-deep);
 }
 
 .dialog-description {
@@ -193,5 +201,12 @@ onBeforeUnmount(() => {
 .dialog-enter-from .dialog-card,
 .dialog-leave-to .dialog-card {
   transform: translateY(10px) scale(0.985);
+}
+
+@media (max-width: 700px) {
+  .dialog-x {
+    width: 44px;
+    height: 44px;
+  }
 }
 </style>

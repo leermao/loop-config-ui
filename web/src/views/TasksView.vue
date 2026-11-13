@@ -424,25 +424,41 @@ onBeforeUnmount(() => {
 <style scoped>
 .view {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .view-heading {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.view-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 96px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
+  content: "";
 }
 
 .view-subtitle {
+  max-width: 690px;
   margin: 0;
   color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .inline-error {
@@ -455,13 +471,13 @@ onBeforeUnmount(() => {
   border-left: 3px solid var(--danger);
   background: var(--danger-light);
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .task-workspace {
   display: grid;
   grid-template-columns: minmax(270px, 0.72fr) minmax(0, 1.9fr);
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -477,7 +493,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 15px;
+  padding: 16px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -502,15 +518,15 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .group-head span {
-  color: var(--signal);
+  color: var(--signal-dark);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .task-index-item {
@@ -519,7 +535,7 @@ onBeforeUnmount(() => {
   gap: 9px;
   align-items: center;
   width: 100%;
-  padding: 9px 14px;
+  padding: 11px 14px;
   border: 0;
   border-left: 3px solid transparent;
   background: transparent;
@@ -562,20 +578,20 @@ onBeforeUnmount(() => {
 
 .task-index-copy strong {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .task-index-copy span {
   overflow: hidden;
   color: var(--ink-soft);
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .task-index-copy small {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10.5px;
 }
 
 .task-chevron {
@@ -599,7 +615,7 @@ onBeforeUnmount(() => {
 
 .case-file {
   min-height: 620px;
-  padding: 20px;
+  padding: 22px;
 }
 
 .case-loading {
@@ -618,13 +634,13 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding-bottom: 15px;
+  padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
 }
 
 .case-file-head h2 {
   margin: 10px 0 6px;
-  font-size: clamp(24px, 2.8vw, 36px);
+  font-size: clamp(26px, 2.8vw, 38px);
   line-height: 1.12;
 }
 
@@ -634,14 +650,14 @@ onBeforeUnmount(() => {
   gap: 5px 16px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .case-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1px;
-  margin: 14px 0;
+  margin: 16px 0;
   background: var(--line);
 }
 
@@ -649,7 +665,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 3px;
   min-width: 0;
-  padding: 9px 11px;
+  padding: 10px 12px;
   background: var(--paper);
 }
 
@@ -659,14 +675,14 @@ onBeforeUnmount(() => {
 
 .case-summary span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .case-summary strong {
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .case-summary .has-error {
@@ -681,7 +697,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
-  padding: 10px 0;
+  padding: 11px 0;
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
 }
@@ -690,13 +706,13 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 30px;
-  padding: 4px 9px;
+  min-height: 32px;
+  padding: 5px 10px;
   border: 1px solid transparent;
   border-radius: 3px;
   background: transparent;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
   cursor: pointer;
 }
 
@@ -713,12 +729,12 @@ onBeforeUnmount(() => {
 .artifact-tab small {
   opacity: 0.56;
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9.5px;
 }
 
 .artifact-view {
   min-height: 280px;
-  padding: 15px 0;
+  padding: 16px 0;
 }
 
 .artifact-toolbar {
@@ -730,7 +746,7 @@ onBeforeUnmount(() => {
 }
 
 .artifact-toolbar a {
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .artifact-code {
@@ -742,7 +758,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius);
   background: #19221f;
   color: #dce5df;
-  font-size: 11px;
+  font-size: 11.5px;
   line-height: 1.58;
   white-space: pre-wrap;
   word-break: break-word;
@@ -811,19 +827,19 @@ onBeforeUnmount(() => {
 .attachment-copy strong {
   overflow: hidden;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .attachment-copy small {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .attachment-empty {
   padding: 18px 0;
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .delete-facts {
@@ -842,13 +858,13 @@ onBeforeUnmount(() => {
 
 .delete-facts span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .delete-facts strong {
   overflow-wrap: anywhere;
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 @media (max-width: 980px) {
@@ -868,6 +884,13 @@ onBeforeUnmount(() => {
 
   .group-head {
     grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 900px) {
+  .task-index-item,
+  .artifact-tab {
+    min-height: 44px;
   }
 }
 

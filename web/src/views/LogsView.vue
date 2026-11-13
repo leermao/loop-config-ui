@@ -402,31 +402,47 @@ onBeforeUnmount(disconnect);
 <style scoped>
 .view {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .view-heading {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.view-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 96px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
+  content: "";
 }
 
 .view-subtitle {
+  max-width: 690px;
   margin: 0;
   color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .log-console {
   display: grid;
   grid-template-columns: minmax(230px, 0.58fr) minmax(0, 2fr);
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
@@ -435,7 +451,7 @@ onBeforeUnmount(disconnect);
   top: 85px;
   max-height: calc(100vh - 105px);
   overflow: auto;
-  padding: 16px 12px 12px;
+  padding: 18px 12px 12px;
 }
 
 .source-panel .panel-title {
@@ -445,7 +461,7 @@ onBeforeUnmount(disconnect);
 .source-loading {
   padding: 24px 8px;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .source-item {
@@ -454,7 +470,7 @@ onBeforeUnmount(disconnect);
   gap: 8px;
   align-items: center;
   width: 100%;
-  padding: 9px 7px;
+  padding: 10px 8px;
   border: 0;
   border-left: 2px solid transparent;
   background: transparent;
@@ -490,7 +506,7 @@ onBeforeUnmount(disconnect);
 
 .source-copy strong {
   overflow: hidden;
-  font-size: 11px;
+  font-size: 11.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -499,7 +515,7 @@ onBeforeUnmount(disconnect);
   overflow: hidden;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -507,7 +523,7 @@ onBeforeUnmount(disconnect);
 .source-mtime {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9.5px;
 }
 
 .source-note {
@@ -522,8 +538,8 @@ onBeforeUnmount(disconnect);
 .source-note p {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 9px;
-  line-height: 1.45;
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
 .viewer {
@@ -536,7 +552,7 @@ onBeforeUnmount(disconnect);
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding: 17px 17px 0;
+  padding: 18px 18px 0;
 }
 
 .viewer-head h2 {
@@ -547,8 +563,8 @@ onBeforeUnmount(disconnect);
   max-width: 680px;
   margin: 5px 0 0;
   color: var(--ink-muted);
-  font-size: 11px;
-  line-height: 1.5;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .viewer-meta {
@@ -561,7 +577,7 @@ onBeforeUnmount(disconnect);
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
-  padding: 13px 17px;
+  padding: 14px 18px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -580,12 +596,12 @@ onBeforeUnmount(disconnect);
 
 .search-box input {
   width: 100%;
-  min-height: 36px;
+  min-height: 38px;
   border: 0;
   outline: none;
   background: transparent;
   color: var(--ink);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .inline-error {
@@ -597,7 +613,7 @@ onBeforeUnmount(disconnect);
   border-bottom: 1px solid rgba(161, 61, 61, 0.25);
   background: var(--danger-light);
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .log-view {
@@ -610,14 +626,14 @@ onBeforeUnmount(disconnect);
     #19221f;
   color: #c8d2cc;
   font-family: var(--font-mono);
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 11.5px;
+  line-height: 1.58;
 }
 
 .log-line {
   display: grid;
   grid-template-columns: 46px minmax(0, 1fr);
-  min-height: 17px;
+  min-height: 18px;
   padding: 0 12px 0 0;
 }
 
@@ -627,7 +643,7 @@ onBeforeUnmount(disconnect);
 
 .line-number {
   padding-right: 9px;
-  color: #52635c;
+  color: #71817a;
   text-align: right;
   user-select: none;
 }
@@ -684,6 +700,11 @@ onBeforeUnmount(disconnect);
 
   .log-view {
     max-height: 60vh;
+  }
+
+  .search-box,
+  .search-box input {
+    min-height: 44px;
   }
 }
 

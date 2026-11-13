@@ -78,7 +78,7 @@ async function copyOutput() {
   border-radius: var(--radius);
   background: #16201d;
   color: #e8ece8;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-float);
 }
 
 .job-dock.status-succeeded {
@@ -166,7 +166,7 @@ async function copyOutput() {
   margin: 0;
   overflow: auto;
   color: #cbd4cf;
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;

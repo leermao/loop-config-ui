@@ -79,13 +79,14 @@ const syncLabel = computed(() => {
 .stage-panel {
   position: relative;
   overflow: hidden;
-  padding: 20px 22px 18px;
+  padding: 21px 22px 19px;
   border: 1px solid var(--line-strong);
+  border-top: 2px solid var(--copper);
   border-radius: var(--radius);
   background:
     linear-gradient(90deg, rgba(214, 90, 52, 0.07), transparent 28%),
-    rgba(248, 246, 239, 0.92);
-  box-shadow: var(--shadow);
+    rgba(248, 246, 239, 0.94);
+  box-shadow: var(--shadow-panel);
 }
 
 .stage-panel::after {
@@ -118,7 +119,7 @@ const syncLabel = computed(() => {
 .stage-meta strong {
   display: block;
   font-family: var(--font-display);
-  font-size: 21px;
+  font-size: 22px;
   line-height: 1.15;
 }
 
@@ -131,13 +132,13 @@ const syncLabel = computed(() => {
   justify-items: end;
   gap: 2px;
   color: var(--ink-muted);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .elapsed {
   color: var(--ink);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .stage-rail {
@@ -186,8 +187,8 @@ const syncLabel = computed(() => {
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 25px;
+  height: 25px;
   border: 1px solid var(--line-strong);
   border-radius: 50%;
   background: var(--paper-light);
@@ -196,7 +197,7 @@ const syncLabel = computed(() => {
 .node-index {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9px;
 }
 
 .stage-node.complete .node-marker {
@@ -237,14 +238,14 @@ const syncLabel = computed(() => {
   overflow: hidden;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 9.5px;
   letter-spacing: 0.08em;
   text-overflow: ellipsis;
 }
 
 .node-label {
   overflow: hidden;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;

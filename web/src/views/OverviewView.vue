@@ -1,7 +1,23 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+  ArrowUpRight,
+  BellRing,
+  Boxes,
+  GitBranch,
+  Layers3,
+  Pause,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Server,
+  Square,
+  TriangleAlert,
+  Wrench
+} from '@lucide/vue';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
+import OpsTelemetry from '../components/OpsTelemetry.vue';
 import StageRail from '../components/StageRail.vue';
 import StatusLamp from '../components/StatusLamp.vue';
 import {
@@ -76,6 +92,7 @@ const anomalyItems = computed(() => {
 const healthCards = computed(() => [
   {
     key: 'runner',
+    icon: Server,
     label: '主进程',
     value: main.value.runAlive ? `PID ${main.value.runPid}` : main.value.residualAlive ? '有残留进程' : '未运行',
     detail: main.value.residualAlive
@@ -85,6 +102,7 @@ const healthCards = computed(() => [
   },
   {
     key: 'notify',
+    icon: BellRing,
     label: '通知任务',
     value: notifyTask.value.loaded ? '已加载' : '未加载',
     detail: notifyTask.value.pid ? `PID ${notifyTask.value.pid}` : '每分钟推送一次进度',
@@ -92,6 +110,7 @@ const healthCards = computed(() => [
   },
   {
     key: 'version',
+    icon: GitBranch,
     label: '版本',
     value: versions.value.source || '无',
     detail: versions.value.match ? '源码与安装一致' : `安装 ${versions.value.installed || '未安装'}`,
@@ -99,6 +118,7 @@ const healthCards = computed(() => [
   },
   {
     key: 'queue',
+    icon: Layers3,
     label: '队列',
     value: `${snapshot.value?.queue?.count ?? 0} 条`,
     detail: snapshot.value?.queue?.error ? '队列文件异常' : queue.value[0] ? `队首 ${queue.value[0].serialNumber}` : '等待新缺陷',
@@ -106,6 +126,7 @@ const healthCards = computed(() => [
   },
   {
     key: 'worktree',
+    icon: Boxes,
     label: 'Worktree',
     value: worktree.value.branch || (worktree.value.exists ? 'detached' : '未创建'),
     detail: worktree.value.dirty ? `${worktree.value.changedFiles?.length || 0} 个未提交改动` : (worktree.value.exists ? '工作区干净' : '下次启动自动创建'),
@@ -114,11 +135,11 @@ const healthCards = computed(() => [
 ]);
 
 const quickActions = computed(() => [
-  { id: 'main.start', label: '启动', tone: 'primary', description: '重新加载 com.autofix，并从现有队列继续。' },
-  { id: 'main.pause', label: '暂停取任务', tone: 'quiet', description: '停止同步和取新任务；当前任务继续跑完。' },
-  { id: 'main.resume', label: '恢复取任务', tone: 'quiet', description: '删除 paused 标记，下一轮恢复同步和取任务。' },
-  { id: 'main.stop', label: '停止', tone: 'danger', description: '卸载主任务并清理残留 run.sh / caffeinate；不会删除队列和 worktree。', requireText: '确认' },
-  { id: 'version.sync', label: '同步版本', tone: 'signal', description: '停止流水线，复制当前 skill 到安装副本，再重新启动。不一致时可能中断当前任务。', requireText: '确认' }
+  { id: 'main.start', label: '启动', icon: Play, tone: 'primary', description: '重新加载 com.autofix，并从现有队列继续。' },
+  { id: 'main.pause', label: '暂停取任务', icon: Pause, tone: 'quiet', description: '停止同步和取新任务；当前任务继续跑完。' },
+  { id: 'main.resume', label: '恢复取任务', icon: RotateCcw, tone: 'quiet', description: '删除 paused 标记，下一轮恢复同步和取任务。' },
+  { id: 'main.stop', label: '停止', icon: Square, tone: 'danger', description: '卸载主任务并清理残留 run.sh / caffeinate；不会删除队列和 worktree。', requireText: '确认' },
+  { id: 'version.sync', label: '同步版本', icon: Wrench, tone: 'signal', description: '停止流水线，复制当前 skill 到安装副本，再重新启动。不一致时可能中断当前任务。', requireText: '确认' }
 ]);
 
 function askAction(action) {
@@ -171,6 +192,7 @@ onBeforeUnmount(() => clearInterval(timer));
       <div class="view-actions">
         <span v-if="snapshot?.generatedAt" class="muted mono-small">更新于 {{ formatRelative(snapshot.generatedAt) }}</span>
         <button class="button button-small" type="button" @click="refreshState().catch((error) => notify(error.message, 'danger'))">
+          <RefreshCw :size="13" aria-hidden="true" />
           刷新状态
         </button>
       </div>
@@ -178,9 +200,17 @@ onBeforeUnmount(() => clearInterval(timer));
 
     <StageRail :current-task="currentTask" :sync="snapshot?.sync" :status="status" />
 
+    <OpsTelemetry
+      :log-lines="snapshot?.recentLog || []"
+      :queue="queue"
+      :health-cards="healthCards"
+      :generated-at="snapshot?.generatedAt || ''"
+      :connection="store.connection"
+    />
+
     <div v-if="anomalyItems.length" class="anomaly-strip" role="status">
       <div class="anomaly-label">
-        <span class="anomaly-mark" aria-hidden="true">!</span>
+        <span class="anomaly-mark" aria-hidden="true"><TriangleAlert :size="12" :stroke-width="2" /></span>
         <strong>需要留意</strong>
       </div>
       <div class="anomaly-list">
@@ -277,9 +307,17 @@ onBeforeUnmount(() => clearInterval(timer));
     </div>
 
     <section class="health-band" aria-label="健康状态">
-      <article v-for="card in healthCards" :key="card.key" class="health-card">
+      <article
+        v-for="(card, index) in healthCards"
+        :key="card.key"
+        class="health-card"
+        :style="{ '--card-index': index }"
+      >
         <div class="health-head">
-          <span>{{ card.label }}</span>
+          <span class="health-label">
+            <component :is="card.icon" :size="13" :stroke-width="1.7" aria-hidden="true" />
+            {{ card.label }}
+          </span>
           <StatusLamp :tone="card.tone" :show-label="false" />
         </div>
         <strong>{{ card.value }}</strong>
@@ -331,12 +369,14 @@ onBeforeUnmount(() => clearInterval(timer));
             :disabled="store.activeJob?.status === 'running'"
             @click="askAction(action)"
           >
-            <span class="quick-action-index" aria-hidden="true">{{ ['01', '02', '03', '04', '05'][quickActions.indexOf(action)] }}</span>
+            <span class="quick-action-icon" aria-hidden="true">
+              <component :is="action.icon" :size="15" :stroke-width="1.7" />
+            </span>
             <span class="quick-action-copy">
               <strong>{{ action.label }}</strong>
               <span>{{ action.description }}</span>
             </span>
-            <span aria-hidden="true">↗</span>
+            <ArrowUpRight class="quick-action-arrow" :size="14" aria-hidden="true" />
           </button>
         </div>
         <div class="sync-note">
@@ -369,40 +409,64 @@ onBeforeUnmount(() => clearInterval(timer));
 <style scoped>
 .view {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .view-heading {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.view-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 96px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
+  content: "";
 }
 
 .view-heading h1 {
-  margin-bottom: 2px;
+  margin-bottom: 5px;
 }
 
 .view-subtitle {
+  max-width: 690px;
   margin: 0;
   color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+}
+
+.view-actions .button svg {
+  transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.view-actions .button:hover svg {
+  transform: rotate(70deg);
 }
 
 .anomaly-strip {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 15px;
-  padding: 11px 14px;
+  padding: 12px 15px;
   border: 1px solid rgba(178, 128, 45, 0.3);
   border-left: 4px solid var(--brass);
   border-radius: var(--radius);
-  background: linear-gradient(90deg, rgba(178, 128, 45, 0.13), rgba(248, 246, 239, 0.7));
+  background: linear-gradient(90deg, rgba(178, 128, 45, 0.14), rgba(248, 246, 239, 0.82));
 }
 
 .anomaly-label {
@@ -429,7 +493,7 @@ onBeforeUnmount(() => clearInterval(timer));
   flex-wrap: wrap;
   gap: 5px 16px;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .anomaly-list .tone-danger {
@@ -443,20 +507,23 @@ onBeforeUnmount(() => clearInterval(timer));
 .overview-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.85fr);
-  gap: 16px;
+  gap: 18px;
 }
 
 .case-sheet {
   overflow: hidden;
-  padding: 22px;
+  padding: 24px;
+  background:
+    linear-gradient(132deg, rgba(214, 90, 52, 0.05), transparent 38%),
+    rgba(248, 246, 239, 0.94);
 }
 
 .case-stripe {
   position: absolute;
   top: 0;
   right: 0;
-  width: 110px;
-  height: 6px;
+  width: 120px;
+  height: 5px;
   background: repeating-linear-gradient(90deg, var(--signal) 0 14px, transparent 14px 21px);
 }
 
@@ -465,7 +532,7 @@ onBeforeUnmount(() => clearInterval(timer));
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding-bottom: 16px;
+  padding-bottom: 18px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -479,14 +546,15 @@ onBeforeUnmount(() => clearInterval(timer));
   max-width: 680px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 14px;
+  font-size: 14.5px;
+  line-height: 1.55;
 }
 
 .case-body {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1px;
-  padding: 16px 0;
+  padding: 18px 0;
   background: var(--line);
 }
 
@@ -494,7 +562,7 @@ onBeforeUnmount(() => clearInterval(timer));
   display: grid;
   gap: 4px;
   min-width: 0;
-  padding: 10px 14px;
+  padding: 11px 14px;
   background: var(--paper-light);
 }
 
@@ -504,20 +572,20 @@ onBeforeUnmount(() => clearInterval(timer));
 
 .case-metric span {
   color: var(--ink-muted);
-  font-size: 10px;
-  letter-spacing: 0.05em;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .case-metric strong {
   overflow: hidden;
-  font-size: 15px;
+  font-size: 15.5px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .case-metric .mono {
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .case-empty {
@@ -545,24 +613,24 @@ onBeforeUnmount(() => clearInterval(timer));
   display: flex;
   align-items: center;
   gap: 9px;
-  padding-top: 14px;
-  margin-top: 2px;
+  padding-top: 15px;
+  margin-top: 4px;
   border-top: 1px solid var(--line);
 }
 
 .queue-panel {
   display: grid;
   align-content: start;
-  padding: 19px;
+  padding: 20px;
 }
 
 .queue-count {
   display: inline-grid;
   place-items: center;
   min-width: 28px;
-  height: 25px;
+  height: 26px;
   margin-left: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-small);
   background: var(--ink);
   color: var(--paper-light);
   font-family: var(--font-mono);
@@ -581,7 +649,7 @@ onBeforeUnmount(() => clearInterval(timer));
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  padding: 10px 8px;
+  padding: 12px 9px;
   border: 0;
   background: var(--paper-light);
   text-align: left;
@@ -594,9 +662,9 @@ onBeforeUnmount(() => clearInterval(timer));
 }
 
 .queue-rank {
-  color: var(--signal);
+  color: var(--signal-dark);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .queue-copy {
@@ -606,13 +674,13 @@ onBeforeUnmount(() => clearInterval(timer));
 
 .queue-copy strong {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 12.5px;
 }
 
 .queue-copy span {
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 12px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -631,19 +699,26 @@ onBeforeUnmount(() => clearInterval(timer));
   grid-template-columns: repeat(5, minmax(0, 1fr));
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: rgba(248, 246, 239, 0.74);
-  box-shadow: var(--shadow-small);
+  background: rgba(248, 246, 239, 0.82);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.58);
 }
 
 .health-card {
+  position: relative;
   display: grid;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
-  padding: 13px 15px;
+  padding: 15px 16px;
+  animation: health-enter 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(var(--card-index) * 45ms);
 }
 
 .health-card + .health-card {
   border-left: 1px solid var(--line);
+}
+
+.health-card:hover {
+  background: rgba(255, 255, 255, 0.34);
 }
 
 .health-head {
@@ -652,15 +727,26 @@ onBeforeUnmount(() => clearInterval(timer));
   justify-content: space-between;
   gap: 8px;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.health-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.health-label svg {
+  color: var(--signal);
+  opacity: 0.8;
 }
 
 .health-card > strong {
   overflow: hidden;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 19px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -668,7 +754,7 @@ onBeforeUnmount(() => clearInterval(timer));
 .health-card > small {
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -676,12 +762,12 @@ onBeforeUnmount(() => clearInterval(timer));
 .lower-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
-  gap: 16px;
+  gap: 18px;
 }
 
 .events,
 .quick {
-  padding: 19px;
+  padding: 20px;
 }
 
 .event-list {
@@ -692,23 +778,23 @@ onBeforeUnmount(() => clearInterval(timer));
 
 .event-row {
   display: grid;
-  grid-template-columns: 105px 11px minmax(0, 1fr);
+  grid-template-columns: 108px 10px minmax(0, 1fr);
   gap: 8px;
   align-items: baseline;
-  padding: 7px 0;
+  padding: 8px 0;
   border-bottom: 1px dashed var(--line);
 }
 
 .event-row time {
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .event-row p {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .event-signal {
@@ -746,7 +832,7 @@ onBeforeUnmount(() => clearInterval(timer));
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  padding: 10px 9px;
+  padding: 11px 10px;
   border: 0;
   background: var(--paper-light);
   text-align: left;
@@ -766,10 +852,37 @@ onBeforeUnmount(() => clearInterval(timer));
   opacity: 0.45;
 }
 
-.quick-action-index {
+.quick-action-icon {
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid rgba(214, 90, 52, 0.24);
+  border-radius: var(--radius-small);
+  background: rgba(214, 90, 52, 0.06);
   color: var(--signal);
-  font-family: var(--font-mono);
-  font-size: 9px;
+  transition:
+    color var(--transition),
+    background var(--transition),
+    transform var(--transition);
+}
+
+.quick-action:hover:not(:disabled) .quick-action-icon {
+  background: var(--signal);
+  color: white;
+  transform: rotate(-7deg) scale(1.04);
+}
+
+.quick-action-arrow {
+  color: var(--ink-muted);
+  transition:
+    color var(--transition),
+    transform var(--transition);
+}
+
+.quick-action:hover:not(:disabled) .quick-action-arrow {
+  color: var(--signal);
+  transform: translate(1px, -1px);
 }
 
 .quick-action-copy {
@@ -778,13 +891,13 @@ onBeforeUnmount(() => clearInterval(timer));
 }
 
 .quick-action-copy strong {
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .quick-action-copy span {
   color: var(--ink-muted);
-  font-size: 10px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.45;
 }
 
 .sync-note {
@@ -799,7 +912,8 @@ onBeforeUnmount(() => clearInterval(timer));
 .sync-note p {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
 .confirm-facts {
@@ -818,13 +932,24 @@ onBeforeUnmount(() => clearInterval(timer));
 
 .confirm-facts span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .confirm-facts strong {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
+}
+
+@keyframes health-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 1120px) {
@@ -879,6 +1004,11 @@ onBeforeUnmount(() => clearInterval(timer));
     grid-template-columns: 85px 8px minmax(0, 1fr);
   }
 
+  .queue-item,
+  .quick-action {
+    min-height: 44px;
+  }
+
   .confirm-facts {
     grid-template-columns: 1fr;
   }
@@ -894,6 +1024,18 @@ onBeforeUnmount(() => clearInterval(timer));
   .health-card:nth-child(4) {
     border-top: 1px solid var(--line);
     border-left: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .health-card {
+    animation: none;
+  }
+
+  .view-actions .button:hover svg,
+  .quick-action:hover:not(:disabled) .quick-action-icon,
+  .quick-action:hover:not(:disabled) .quick-action-arrow {
+    transform: none;
   }
 }
 </style>

@@ -1,5 +1,17 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import {
+  Activity,
+  Clock3,
+  GitBranch,
+  LayoutDashboard,
+  ListTodo,
+  Radio,
+  RefreshCw,
+  ScrollText,
+  SlidersHorizontal,
+  Wrench
+} from '@lucide/vue';
 
 import JobDock from './components/JobDock.vue';
 import StatusLamp from './components/StatusLamp.vue';
@@ -17,11 +29,11 @@ const clock = ref(new Date());
 let clockTimer;
 
 const routes = [
-  { id: 'overview', label: '总览', symbol: '◎', hint: '运行态与阶段' },
-  { id: 'tasks', label: '任务', symbol: '▤', hint: '队列与案卷' },
-  { id: 'logs', label: '日志', symbol: '≋', hint: '实时追踪' },
-  { id: 'config', label: '配置', symbol: '⌘', hint: '参数与诊断' },
-  { id: 'operations', label: '运维', symbol: '⚑', hint: '生命周期与维护' }
+  { id: 'overview', label: '总览', icon: LayoutDashboard, hint: '运行态与阶段' },
+  { id: 'tasks', label: '任务', icon: ListTodo, hint: '队列与案卷' },
+  { id: 'logs', label: '日志', icon: ScrollText, hint: '实时追踪' },
+  { id: 'config', label: '配置', icon: SlidersHorizontal, hint: '参数与诊断' },
+  { id: 'operations', label: '运维', icon: Wrench, hint: '生命周期与维护' }
 ];
 
 const views = {
@@ -63,7 +75,8 @@ function routeFromHash() {
 function navigate(id) {
   if (id === route.value) return;
   window.location.hash = `#/${id}`;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduced ? 'auto' : 'smooth' });
 }
 
 function retryConnection() {
@@ -104,7 +117,13 @@ onBeforeUnmount(() => {
           :title="item.hint"
           @click="navigate(item.id)"
         >
-          <span class="rail-symbol" aria-hidden="true">{{ item.symbol }}</span>
+          <component
+            :is="item.icon"
+            class="rail-icon"
+            :size="21"
+            :stroke-width="1.65"
+            aria-hidden="true"
+          />
           <span class="rail-label">{{ item.label }}</span>
         </button>
       </nav>
@@ -124,19 +143,19 @@ onBeforeUnmount(() => {
         </div>
         <div class="instrument-strip">
           <div class="instrument-cell status-cell">
-            <span class="cell-key">Pipeline</span>
+            <span class="cell-key"><Activity :size="10" aria-hidden="true" />Pipeline</span>
             <StatusLamp :tone="statusTone" :label="statusLabel" />
           </div>
           <div class="instrument-cell">
-            <span class="cell-key">Version</span>
+            <span class="cell-key"><GitBranch :size="10" aria-hidden="true" />Version</span>
             <span class="cell-value" :class="{ warn: versionTone === 'warn' }">{{ versionLabel }}</span>
           </div>
           <div class="instrument-cell">
-            <span class="cell-key">Sync window</span>
+            <span class="cell-key"><Clock3 :size="10" aria-hidden="true" />Sync window</span>
             <span class="cell-value">{{ syncWindow }}</span>
           </div>
           <div class="instrument-cell">
-            <span class="cell-key">Stream</span>
+            <span class="cell-key"><Radio :size="10" aria-hidden="true" />Stream</span>
             <StatusLamp :tone="connectionTone" :label="connectionLabel" />
           </div>
           <time class="instrument-clock" :datetime="clock.toISOString()">{{ formatClock(clock) }}</time>
@@ -145,7 +164,10 @@ onBeforeUnmount(() => {
 
       <div v-if="store.error" class="global-error" role="alert">
         <span><strong>控制台连接异常：</strong>{{ store.error }}</span>
-        <button class="button button-small" type="button" @click="retryConnection">重试状态同步</button>
+        <button class="button button-small" type="button" @click="retryConnection">
+          <RefreshCw :size="13" aria-hidden="true" />
+          重试状态同步
+        </button>
       </div>
 
       <main class="page-stage">
@@ -179,12 +201,14 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-rows: auto 1fr auto;
   width: var(--rail-width);
-  padding: 18px 10px 16px;
+  padding: 20px 11px 16px;
   background:
-    linear-gradient(180deg, rgba(214, 90, 52, 0.13), transparent 22%),
+    linear-gradient(180deg, rgba(214, 90, 52, 0.16), transparent 24%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px),
     var(--ink);
+  background-size: auto, 12px 100%, auto;
   color: var(--paper-light);
-  box-shadow: 7px 0 25px rgba(28, 39, 36, 0.18);
+  box-shadow: 6px 0 22px rgba(28, 39, 36, 0.16);
 }
 
 .control-rail::after {
@@ -207,6 +231,8 @@ onBeforeUnmount(() => {
   display: grid;
   justify-items: center;
   gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -219,89 +245,93 @@ onBeforeUnmount(() => {
   place-items: center;
   width: 46px;
   height: 46px;
-  border: 1px solid rgba(255, 255, 255, 0.35);
-  color: var(--signal);
+  border: 1px solid rgba(248, 246, 239, 0.78);
+  background: var(--paper-light);
+  color: var(--ink);
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.04em;
+  box-shadow: inset 0 -3px 0 var(--signal);
 }
 
 .brand-word {
-  color: rgba(248, 246, 239, 0.6);
+  color: rgba(248, 246, 239, 0.68);
   font-family: var(--font-mono);
-  font-size: 7px;
-  line-height: 1.5;
-  letter-spacing: 0.17em;
+  font-size: 8.5px;
+  line-height: 1.45;
+  letter-spacing: 0.14em;
   text-align: center;
 }
 
 .rail-nav {
   display: grid;
   align-content: center;
-  gap: 6px;
-  margin: 24px 0;
+  gap: 7px;
+  margin: 26px 0;
 }
 
 .rail-link {
   position: relative;
   display: grid;
   justify-items: center;
-  gap: 2px;
+  gap: 3px;
   width: 100%;
-  min-height: 61px;
-  padding: 9px 4px;
+  min-height: 63px;
+  padding: 10px 4px;
   border: 1px solid transparent;
   border-radius: var(--radius);
   background: transparent;
-  color: rgba(248, 246, 239, 0.55);
+  color: rgba(248, 246, 239, 0.6);
   cursor: pointer;
   transition:
     color var(--transition),
     background var(--transition),
-    border-color var(--transition);
+    border-color var(--transition),
+    box-shadow var(--transition);
 }
 
-.rail-link:hover {
+.rail-link:hover:not(.active) {
   color: var(--paper-light);
   background: rgba(255, 255, 255, 0.04);
 }
 
 .rail-link.active {
-  border-color: rgba(214, 90, 52, 0.46);
-  background: rgba(214, 90, 52, 0.13);
-  color: var(--paper-light);
+  border-color: rgba(248, 246, 239, 0.48);
+  background: var(--paper-light);
+  color: var(--ink);
+  box-shadow:
+    inset 3px 0 0 var(--signal),
+    0 7px 18px rgba(0, 0, 0, 0.16);
 }
 
-.rail-link.active::before {
-  position: absolute;
-  top: 12px;
-  bottom: 12px;
-  left: -10px;
-  width: 3px;
-  background: var(--signal);
-  content: "";
+.rail-link.active .rail-icon {
+  color: var(--signal-dark);
 }
 
-.rail-symbol {
-  font-family: var(--font-display);
-  font-size: 21px;
-  line-height: 1;
+.rail-icon {
+  color: currentColor;
+  transition: transform var(--transition);
+}
+
+.rail-link:hover .rail-icon {
+  transform: translateY(-1px);
 }
 
 .rail-label {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
 }
 
 .rail-foot {
   display: grid;
   justify-items: center;
-  gap: 4px;
-  color: rgba(248, 246, 239, 0.35);
+  gap: 3px;
+  color: rgba(248, 246, 239, 0.6);
   font-family: var(--font-mono);
-  font-size: 7px;
-  letter-spacing: 0.06em;
+  font-size: 8.5px;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
 }
 
 .rail-axis {
@@ -324,30 +354,50 @@ onBeforeUnmount(() => {
   align-items: stretch;
   justify-content: space-between;
   gap: 20px;
-  min-height: 67px;
-  padding: 0 26px;
-  border-bottom: 1px solid var(--line);
-  background: rgba(241, 239, 232, 0.9);
-  backdrop-filter: blur(12px);
+  min-height: 72px;
+  padding: 0 28px;
+  border-bottom: 1px solid var(--line-strong);
+  background: rgba(241, 239, 232, 0.93);
+  backdrop-filter: blur(14px);
+}
+
+.instrument-bar::after {
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 5px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--line-strong) 0,
+    var(--line-strong) 1px,
+    transparent 1px,
+    transparent 8px
+  );
+  content: "";
+  opacity: 0.34;
+  pointer-events: none;
 }
 
 .instrument-title {
   display: grid;
   align-content: center;
-  gap: 1px;
+  gap: 2px;
   min-width: 220px;
+  padding-left: 13px;
+  border-left: 3px solid var(--signal);
 }
 
 .instrument-kicker {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.13em;
 }
 
 .instrument-sub {
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .instrument-strip {
@@ -359,43 +409,48 @@ onBeforeUnmount(() => {
 .instrument-cell {
   display: grid;
   align-content: center;
-  gap: 1px;
-  min-width: 112px;
-  padding: 0 14px;
+  gap: 2px;
+  min-width: 124px;
+  padding: 0 16px;
   border-left: 1px solid var(--line);
 }
 
 .cell-key {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 0.08em;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.095em;
   text-transform: uppercase;
 }
 
 .cell-value {
   overflow: hidden;
-  max-width: 150px;
-  font-size: 11px;
+  max-width: 166px;
+  font-size: 12px;
   font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .cell-value.warn {
-  color: #8b611b;
+  color: #795416;
 }
 
 .instrument-clock {
   display: grid;
   place-items: center;
-  min-width: 92px;
-  padding-left: 14px;
+  min-width: 100px;
+  padding-left: 16px;
   border-left: 1px solid var(--line);
   color: var(--signal-dark);
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.025em;
 }
 
 .global-error {
@@ -403,16 +458,16 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 9px 26px;
+  padding: 10px 28px;
   border-bottom: 1px solid rgba(161, 61, 61, 0.25);
   background: var(--danger-light);
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--text-small);
 }
 
 .page-stage {
   width: min(100%, var(--content-width));
-  padding: 26px;
+  padding: 30px 28px 44px;
   margin: 0 auto;
 }
 
@@ -427,7 +482,7 @@ onBeforeUnmount(() => {
   border-radius: var(--radius);
   background: var(--ink);
   color: var(--paper-light);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-float);
   font-weight: 600;
   transform: translateX(-50%);
 }
@@ -477,10 +532,11 @@ onBeforeUnmount(() => {
 
   .instrument-bar {
     justify-content: flex-end;
+    min-height: 66px;
   }
 
   .instrument-cell {
-    min-width: 100px;
+    min-width: 106px;
   }
 }
 
@@ -495,8 +551,8 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 62px;
-    padding: 7px 10px;
+    height: 64px;
+    padding: 8px 12px;
   }
 
   .control-rail::after,
@@ -512,9 +568,9 @@ onBeforeUnmount(() => {
   }
 
   .brand-mark {
-    width: 38px;
-    height: 38px;
-    font-size: 17px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
   }
 
   .brand-word {
@@ -530,26 +586,17 @@ onBeforeUnmount(() => {
   }
 
   .rail-link {
-    min-height: 46px;
+    min-height: 48px;
     max-width: 86px;
-    padding: 4px 7px;
+    padding: 5px 7px;
   }
 
-  .rail-link.active::before {
-    top: auto;
-    right: 12px;
-    bottom: -7px;
-    left: 12px;
-    width: auto;
-    height: 2px;
-  }
-
-  .rail-symbol {
-    font-size: 17px;
+  .rail-link.active {
+    box-shadow: inset 0 -2px 0 var(--signal);
   }
 
   .rail-label {
-    font-size: 10px;
+    font-size: 10.5px;
   }
 
   .workspace {
@@ -557,9 +604,9 @@ onBeforeUnmount(() => {
   }
 
   .instrument-bar {
-    top: 62px;
-    min-height: 52px;
-    padding: 0 12px;
+    top: 64px;
+    min-height: 54px;
+    padding: 0 14px;
     overflow-x: auto;
   }
 
@@ -569,7 +616,7 @@ onBeforeUnmount(() => {
 
   .instrument-cell {
     min-width: 94px;
-    padding: 0 10px;
+    padding: 0 11px;
   }
 
   .instrument-cell:nth-child(3) {
@@ -577,7 +624,7 @@ onBeforeUnmount(() => {
   }
 
   .page-stage {
-    padding: 16px;
+    padding: 20px 16px 32px;
   }
 }
 
@@ -587,12 +634,8 @@ onBeforeUnmount(() => {
     padding-inline: 3px;
   }
 
-  .rail-symbol {
-    font-size: 15px;
-  }
-
   .rail-label {
-    font-size: 9px;
+    font-size: 9.5px;
   }
 
   .instrument-cell:nth-child(2),

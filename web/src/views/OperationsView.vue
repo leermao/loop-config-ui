@@ -334,37 +334,53 @@ onMounted(() => {
 <style scoped>
 .view {
   display: grid;
-  gap: 18px;
+  gap: 22px;
 }
 
 .view-heading {
+  position: relative;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.view-heading::after {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 96px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
+  content: "";
 }
 
 .view-subtitle {
+  max-width: 690px;
   margin: 0;
   color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.55;
 }
 
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ops-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
-  gap: 16px;
+  gap: 18px;
   align-items: start;
 }
 
 .ops-groups {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 
 .ops-group {
@@ -376,7 +392,7 @@ onMounted(() => {
   grid-template-columns: 44px minmax(0, 1fr) auto;
   gap: 13px;
   align-items: start;
-  padding: 17px 18px;
+  padding: 18px 20px;
   border-bottom: 1px solid var(--line);
   background:
     repeating-linear-gradient(-45deg, transparent 0 7px, rgba(28, 39, 36, 0.025) 7px 8px),
@@ -389,10 +405,11 @@ onMounted(() => {
   width: 38px;
   height: 38px;
   border: 1px solid var(--signal);
-  color: var(--signal);
+  color: var(--signal-dark);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
+  box-shadow: inset 0 -2px 0 rgba(214, 90, 52, 0.2);
 }
 
 .ops-group-head h2 {
@@ -402,7 +419,8 @@ onMounted(() => {
 .ops-group-head p:not(.eyebrow) {
   margin: 0;
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
+  line-height: 1.55;
 }
 
 .action-list {
@@ -414,7 +432,7 @@ onMounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  padding: 12px 18px;
+  padding: 14px 20px;
   border-left: 3px solid transparent;
   transition:
     background var(--transition),
@@ -448,31 +466,32 @@ onMounted(() => {
 }
 
 .action-copy strong {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .action-copy p {
   margin: 2px 0 0;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .action-copy small {
   display: block;
   margin-top: 2px;
   color: var(--signal-dark);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .ops-aside {
   position: sticky;
   top: 85px;
   display: grid;
-  gap: 12px;
+  gap: 14px;
 }
 
 .ops-summary {
-  padding: 16px;
+  padding: 18px;
 }
 
 .ops-summary dl {
@@ -492,7 +511,7 @@ onMounted(() => {
 
 .ops-summary dt {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
@@ -500,7 +519,7 @@ onMounted(() => {
   overflow: hidden;
   margin: 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -525,17 +544,17 @@ onMounted(() => {
   align-self: center;
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .marker-list strong {
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 .marker-list small {
   overflow: hidden;
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -553,7 +572,8 @@ onMounted(() => {
   padding-left: 16px;
   margin: 0;
   color: var(--ink-muted);
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1.55;
 }
 
 .policy-list li + li {
@@ -576,13 +596,13 @@ onMounted(() => {
 
 .confirm-grid span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   text-transform: uppercase;
 }
 
 .confirm-grid strong {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .queue-field {
@@ -595,7 +615,8 @@ onMounted(() => {
   border-left: 3px solid var(--danger);
   background: var(--danger-light);
   color: var(--danger);
-  font-size: 10px;
+  font-size: 10.5px;
+  line-height: 1.5;
 }
 
 @media (max-width: 1050px) {

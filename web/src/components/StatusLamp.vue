@@ -41,7 +41,7 @@ defineProps({
 }
 
 .tone-running {
-  color: var(--copper);
+  color: var(--copper-dark);
 }
 
 .tone-running .lamp::after {
@@ -54,7 +54,7 @@ defineProps({
 }
 
 .tone-warn {
-  color: var(--brass);
+  color: var(--brass-dark);
 }
 
 .tone-danger {

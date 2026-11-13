@@ -146,7 +146,7 @@ async function readVersions(config) {
   };
 }
 
-function recentLines(text, count = 20) {
+function recentLines(text, count = 120) {
   const lines = String(text ?? '').split(/\r?\n/).filter(Boolean);
   return lines.slice(-count);
 }

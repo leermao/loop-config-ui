@@ -146,14 +146,14 @@ function copyLabel(item) {
   border-bottom: 1px solid var(--line);
   color: var(--ink-muted);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 10.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
 .doctor-group h3 span {
   color: var(--ink-muted);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0;
 }
 
@@ -244,7 +244,7 @@ function copyLabel(item) {
   margin-top: 18px;
   border-top: 1px solid var(--line);
   color: var(--ink-muted);
-  font-size: 11px;
+  font-size: 11.5px;
 }
 
 @media (max-width: 760px) {

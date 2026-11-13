@@ -581,6 +581,11 @@ onBeforeUnmount(() => {
   pointer-events: none;
 }
 
+.scene-viewport.is-webgl .scene-deck *,
+.scene-viewport.is-webgl .scene-motes * {
+  animation-play-state: paused !important;
+}
+
 .scene-deck {
   position: absolute;
   z-index: 3;

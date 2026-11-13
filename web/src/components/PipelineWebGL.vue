@@ -48,7 +48,6 @@ const pointerNdc = new Vector2();
 const palette = {
   ink: 0x1c2724,
   paper: 0xfff8f2,
-  paperDeep: 0xe3ded1,
   pendingFace: 0xd8d1c2,
   pendingEdge: 0x53615b,
   completeFace: 0x2f7565,

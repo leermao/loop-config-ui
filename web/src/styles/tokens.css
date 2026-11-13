@@ -1,0 +1,28 @@
+:root {
+  color-scheme: light;
+  --ink: #1c2724;
+  --ink-soft: #37453f;
+  --ink-muted: #69736d;
+  --paper: #f1efe8;
+  --paper-deep: #e6e2d6;
+  --paper-light: #f8f6ef;
+  --signal: #d65a34;
+  --signal-dark: #a84427;
+  --copper: #2f7565;
+  --copper-light: #d8e8e2;
+  --brass: #b2802d;
+  --brass-light: #f2e6c9;
+  --danger: #a13d3d;
+  --danger-light: #f2dddd;
+  --line: rgba(28, 39, 36, 0.18);
+  --line-strong: rgba(28, 39, 36, 0.36);
+  --shadow: 0 18px 50px rgba(28, 39, 36, 0.11);
+  --shadow-small: 0 6px 18px rgba(28, 39, 36, 0.08);
+  --radius: 4px;
+  --font-display: "Avenir Next Condensed", "DIN Alternate", "PingFang SC", sans-serif;
+  --font-body: "Avenir Next", "PingFang SC", "Hiragino Sans GB", sans-serif;
+  --font-mono: "SFMono-Regular", Menlo, Consolas, monospace;
+  --rail-width: 86px;
+  --content-width: 1540px;
+  --transition: 180ms ease;
+}

@@ -9,11 +9,36 @@ import {
 } from './paths.js';
 
 export const STATIC_LOG_SOURCES = [
-  { id: 'log', label: '进度日志', file: 'log' },
-  { id: 'launchd', label: 'launchd 输出', file: 'launchd.log' },
-  { id: 'notify', label: '通知日志', file: 'notify.log' },
-  { id: 'deps', label: '依赖安装', file: 'deps.log' },
-  { id: 'main-sync', label: 'main 同步', file: 'main-sync.log' }
+  {
+    id: 'log',
+    label: '进度日志',
+    file: 'log',
+    description: '云效同步、任务进度和异常事件；日常排查先看这里。'
+  },
+  {
+    id: 'launchd',
+    label: 'launchd 进程日志',
+    file: 'launchd.log',
+    description: '主进程 stdout/stderr；仅在启动失败或脚本报错时出现，正常为空。'
+  },
+  {
+    id: 'notify',
+    label: '通知日志',
+    file: 'notify.log',
+    description: '通知任务的输出；记录状态推送和发送失败。'
+  },
+  {
+    id: 'deps',
+    label: '依赖安装日志',
+    file: 'deps.log',
+    description: '最近一次 pnpm install 的输出；依赖安装失败时查看。'
+  },
+  {
+    id: 'main-sync',
+    label: 'main 合并日志',
+    file: 'main-sync.log',
+    description: '任务开始前合并 origin/main 的 git 输出；没有合并需求时不会生成。'
+  }
 ];
 
 const STATIC_BY_ID = new Map(STATIC_LOG_SOURCES.map((item) => [item.id, item]));

@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import DoctorPanel from '../components/DoctorPanel.vue';
@@ -189,6 +189,28 @@ function switchTab(tab) {
   if (tab === 'doctor' && !doctorReport.value && !doctorLoading.value) loadDoctor();
 }
 
+function handleDoctorTarget(target) {
+  if (!target) return;
+  if (target.view === 'config') {
+    switchTab('config');
+    groupFilter.value = '全部';
+    query.value = target.key || '';
+    if (target.key) {
+      nextTick(() => {
+        document.querySelector(`[data-config-key="${target.key}"]`)?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      });
+    }
+    return;
+  }
+  if (target.view === 'operations') {
+    const actionQuery = target.actionId ? `?action=${encodeURIComponent(target.actionId)}` : '';
+    window.location.hash = `#/operations${actionQuery}`;
+  }
+}
+
 function goOperations() {
   window.location.hash = '#/operations';
 }
@@ -299,6 +321,7 @@ onMounted(() => {
               <article
                 v-for="entry in group.entries"
                 :key="entry.key"
+                :data-config-key="entry.key"
                 class="config-row"
                 :class="{ changed: changedKeys.includes(entry.key), readonly: entry.displayOnly }"
               >
@@ -380,6 +403,7 @@ onMounted(() => {
       :loading="doctorLoading"
       :error="doctorError"
       @refresh="loadDoctor"
+      @navigate="handleDoctorTarget"
     />
 
     <ConfirmDialog

@@ -27,9 +27,30 @@ const taskSources = computed(() => {
   const task = store.snapshot?.currentTask;
   if (!task) return [];
   return [
-    { id: `task:${task.id}:test.log`, label: '当前任务 · 测试日志', name: 'test.log', taskId: task.id, exists: true },
-    { id: `task:${task.id}:yunxiao.out`, label: '当前任务 · 云效回写', name: 'yunxiao.out', taskId: task.id, exists: true },
-    { id: `task:${task.id}:codex.md`, label: '当前任务 · 修复输出', name: 'codex.md', taskId: task.id, exists: true }
+    {
+      id: `task:${task.id}:test.log`,
+      label: '当前任务 · 测试日志',
+      name: 'test.log',
+      taskId: task.id,
+      exists: true,
+      description: '当前任务的测试输出和失败详情。'
+    },
+    {
+      id: `task:${task.id}:yunxiao.out`,
+      label: '当前任务 · 云效回写',
+      name: 'yunxiao.out',
+      taskId: task.id,
+      exists: true,
+      description: '任务完成后回写云效状态的接口输出。'
+    },
+    {
+      id: `task:${task.id}:codex.md`,
+      label: '当前任务 · 修复输出',
+      name: 'codex.md',
+      taskId: task.id,
+      exists: true,
+      description: 'codex 修复过程的最终输出与 RESULT。'
+    }
   ];
 });
 
@@ -39,7 +60,7 @@ const sources = computed(() => [
 ]);
 
 const selectedSource = computed(() => sources.value.find((item) => item.key === selectedKey.value) || sources.value[0] || null);
-const allLines = computed(() => text.value.split('\n'));
+const allLines = computed(() => text.value ? text.value.split('\n') : []);
 const filteredLines = computed(() => {
   const needle = query.value.trim().toLowerCase();
   const lines = needle
@@ -48,6 +69,18 @@ const filteredLines = computed(() => {
   return lines.slice(-2000);
 });
 const visibleText = computed(() => filteredLines.value.join('\n'));
+const emptyMessage = computed(() => {
+  if (query.value.trim()) return '没有匹配的日志行';
+  const current = selectedSource.value;
+  if (!current) return '请选择日志来源';
+  if (current.id === 'main-sync' && !current.exists) {
+    return '尚无 main 合并记录；任务开始前需要合并 origin/main 时才会生成';
+  }
+  if (current.id === 'launchd') return '主进程没有输出；正常运行且没有脚本错误时为空';
+  if (current.id === 'deps' && !current.exists) return '尚无依赖安装记录；安装依赖时才会生成';
+  if (!current.exists) return '日志文件尚不存在';
+  return '日志文件还是空的';
+});
 const streamLabel = computed(() => ({
   live: '实时',
   connecting: '连接中',
@@ -310,6 +343,9 @@ onBeforeUnmount(disconnect);
           <div>
             <p class="eyebrow">{{ selectedSource?.file || selectedSource?.name || 'No source' }}</p>
             <h2>{{ selectedSource?.label || '选择日志来源' }}</h2>
+            <p v-if="selectedSource?.description" class="source-description">
+              {{ selectedSource.description }}
+            </p>
           </div>
           <div class="viewer-meta">
             <span class="badge">{{ filteredLines.length }} 行</span>
@@ -342,7 +378,7 @@ onBeforeUnmount(disconnect);
 
         <div ref="scrollRef" class="log-view" role="log" aria-live="polite" tabindex="0">
           <div v-if="!filteredLines.length" class="log-empty">
-            <span>{{ query ? '没有匹配的日志行' : '日志文件尚不存在或还是空的' }}</span>
+            <span>{{ emptyMessage }}</span>
           </div>
           <div
             v-for="(line, index) in filteredLines"
@@ -505,6 +541,14 @@ onBeforeUnmount(disconnect);
 
 .viewer-head h2 {
   margin: 0;
+}
+
+.source-description {
+  max-width: 680px;
+  margin: 5px 0 0;
+  color: var(--ink-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .viewer-meta {

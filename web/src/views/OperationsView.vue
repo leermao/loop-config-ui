@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, nextTick, onMounted, ref } from 'vue';
 
 import ConfirmDialog from '../components/ConfirmDialog.vue';
 import StatusLamp from '../components/StatusLamp.vue';
@@ -15,6 +15,8 @@ const store = useConsoleStore();
 const pendingAction = ref(null);
 const busy = ref(false);
 const queueId = ref('');
+const focusedActionId = ref('');
+const actionRefs = new Map();
 
 const groups = [
   {
@@ -161,6 +163,21 @@ function statusForAction(action) {
   if (runningJob.value) return '等待当前动作结束';
   return '';
 }
+
+function setActionRef(id, element) {
+  if (element) actionRefs.set(id, element);
+  else actionRefs.delete(id);
+}
+
+onMounted(() => {
+  const query = window.location.hash.split('?')[1] || '';
+  const actionId = new URLSearchParams(query).get('action');
+  if (!actionId) return;
+  focusedActionId.value = actionId;
+  nextTick(() => {
+    actionRefs.get(actionId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+});
 </script>
 
 <template>
@@ -195,11 +212,13 @@ function statusForAction(action) {
             <article
               v-for="action in group.actions"
               :key="action.id"
+              :ref="(element) => setActionRef(action.id, element)"
               class="action-card"
-              :class="{ danger: action.confirm === 'danger' }"
+              :class="{ danger: action.confirm === 'danger', focused: focusedActionId === action.id }"
             >
               <div class="action-copy">
                 <strong>{{ action.label }}</strong>
+                <small v-if="focusedActionId === action.id">来自环境诊断，请确认后执行</small>
                 <p>{{ action.impact }}</p>
                 <small v-if="statusForAction(action)">{{ statusForAction(action) }}</small>
               </div>
@@ -416,6 +435,12 @@ function statusForAction(action) {
 
 .action-card.danger:hover {
   border-left-color: var(--danger);
+}
+
+.action-card.focused {
+  border-left-color: var(--signal);
+  background: rgba(214, 90, 52, 0.08);
+  box-shadow: inset 0 0 0 1px rgba(214, 90, 52, 0.24);
 }
 
 .action-copy {

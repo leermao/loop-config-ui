@@ -9,7 +9,7 @@ const props = defineProps({
   error: { type: String, default: '' }
 });
 
-const emit = defineEmits(['refresh']);
+const emit = defineEmits(['refresh', 'navigate']);
 
 const statusText = {
   ok: '正常',
@@ -29,6 +29,12 @@ const grouped = computed(() => {
 async function copyFix(command) {
   await navigator.clipboard.writeText(command);
   notify('修复命令已复制', 'success');
+}
+
+function copyLabel(item) {
+  return item.id.startsWith('command:') || ['glab:auth', 'pnpm:version'].includes(item.id)
+    ? '复制命令'
+    : '复制建议';
 }
 </script>
 
@@ -65,9 +71,26 @@ async function copyFix(command) {
             </span>
           </div>
           <p class="doctor-detail">{{ item.detail || '—' }}</p>
-          <div v-if="item.fix" class="doctor-fix">
-            <code>{{ item.fix }}</code>
-            <button class="button button-small button-quiet" type="button" @click="copyFix(item.fix)">复制</button>
+          <div v-if="item.fix || item.target" class="doctor-fix">
+            <code v-if="item.fix">{{ item.fix }}</code>
+            <div class="doctor-fix-actions">
+              <button
+                v-if="item.target"
+                class="button button-small button-primary"
+                type="button"
+                @click="emit('navigate', item.target)"
+              >
+                {{ item.target.label || '去处理' }}
+              </button>
+              <button
+                v-if="item.fix"
+                class="button button-small button-quiet"
+                type="button"
+                @click="copyFix(item.fix)"
+              >
+                {{ copyLabel(item) }}
+              </button>
+            </div>
           </div>
         </article>
       </div>
@@ -177,9 +200,18 @@ async function copyFix(command) {
 }
 
 .doctor-fix code {
+  flex: 1;
   overflow-wrap: anywhere;
   color: var(--danger);
   font-size: 10.5px;
+}
+
+.doctor-fix-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
 }
 
 .doctor-error {

@@ -61,6 +61,8 @@ test('listLogSources reports existing and missing files', async (t) => {
   assert.equal(log.name, 'log');
   assert.equal(notify.name, 'notify');
   assert.equal(notify.file, 'notify.log');
+  assert.match(log.description, /任务进度/);
+  assert.match(sources.find((item) => item.id === 'launchd').description, /正常为空/);
   assert.equal(log.exists, true);
   assert.equal(log.size, 5);
   assert.equal(notify.exists, false);

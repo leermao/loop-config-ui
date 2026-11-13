@@ -79,6 +79,17 @@ test('doctor reports missing commands and paths with fixes', async (t) => {
   assert.equal(glab.status, 'warn');
   const version = report.items.find((item) => item.id === 'version');
   assert.equal(version.status, 'warn');
+  assert.deepEqual(version.target, {
+    view: 'operations',
+    actionId: 'version.sync',
+    label: '同步版本并重启'
+  });
+  const envFile = report.items.find((item) => item.id === 'path:env');
+  assert.deepEqual(envFile.target, {
+    view: 'config',
+    label: '去配置',
+    key: null
+  });
 });
 
 test('doctor reports invalid queue and dirty worktree', async (t) => {

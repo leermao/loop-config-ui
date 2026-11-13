@@ -283,7 +283,7 @@ const priorityOption = computed(() => ({
         <header class="chart-head">
           <div>
             <span class="chart-kicker">Event pulse / 6h</span>
-            <strong>{{ activityTotal }} <small>个事件</small></strong>
+            <strong><span :key="activityTotal" class="chart-metric-value">{{ activityTotal }}</span> <small>个事件</small></strong>
           </div>
           <div class="chart-stats">
             <span><i class="stat-dot success"></i>{{ successCount }} 完成</span>
@@ -314,7 +314,7 @@ const priorityOption = computed(() => ({
         <header class="chart-head">
           <div>
             <span class="chart-kicker">Queue pressure</span>
-            <strong>{{ queue.length }} <small>条待处理</small></strong>
+            <strong><span :key="queue.length" class="chart-metric-value">{{ queue.length }}</span> <small>条待处理</small></strong>
           </div>
           <span class="badge" :class="urgentCount ? 'badge-danger' : 'badge-success'">
             {{ urgentCount ? `${urgentCount} 条紧急/高` : '无高优积压' }}
@@ -418,6 +418,10 @@ const priorityOption = computed(() => ({
   box-shadow: inset 0 -2px 0 rgba(214, 90, 52, 0.24);
 }
 
+.telemetry-icon svg {
+  animation: telemetry-scan 4.8s ease-in-out infinite;
+}
+
 .telemetry-meta {
   justify-content: flex-end;
   gap: 12px;
@@ -445,6 +449,10 @@ const priorityOption = computed(() => ({
   color: var(--brass-dark);
 }
 
+.live-mark:not(.paused) svg {
+  animation: live-tick 2.2s ease-in-out infinite;
+}
+
 .telemetry-grid {
   position: relative;
   z-index: 1;
@@ -467,6 +475,18 @@ const priorityOption = computed(() => ({
   background-size: 24px 24px;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.52);
   animation: chart-enter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    border-color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+}
+
+.chart-card:hover {
+  border-color: var(--line-strong);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.58),
+    0 8px 20px rgba(28, 39, 36, 0.055);
+  transform: translateY(-2px);
 }
 
 .queue-chart-card {
@@ -506,6 +526,11 @@ const priorityOption = computed(() => ({
   font-weight: 500;
 }
 
+.chart-metric-value {
+  display: inline-block;
+  animation: metric-tick 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 .chart-stats {
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -530,6 +555,7 @@ const priorityOption = computed(() => ({
 
 .stat-dot.alert {
   background: var(--danger);
+  animation: alert-glint 2.4s ease-in-out infinite;
 }
 
 .chart-caption {
@@ -565,6 +591,7 @@ const priorityOption = computed(() => ({
 .chart-empty svg {
   color: var(--signal);
   opacity: 0.72;
+  animation: empty-float 3.4s ease-in-out infinite alternate;
 }
 
 .chart-empty strong {
@@ -605,6 +632,53 @@ const priorityOption = computed(() => ({
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes telemetry-scan {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  48%,
+  56% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes live-tick {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes metric-tick {
+  from {
+    opacity: 0.4;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes alert-glint {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(161, 61, 61, 0.3);
+  }
+  52% {
+    box-shadow: 0 0 0 4px rgba(161, 61, 61, 0);
+  }
+}
+
+@keyframes empty-float {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-4px);
   }
 }
 
@@ -650,8 +724,15 @@ const priorityOption = computed(() => ({
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .chart-card {
+  .chart-card,
+  .chart-card:hover,
+  .chart-empty svg,
+  .chart-metric-value,
+  .live-mark svg,
+  .stat-dot.alert,
+  .telemetry-icon svg {
     animation: none;
+    transform: none;
   }
 }
 </style>

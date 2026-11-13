@@ -62,11 +62,23 @@ const liveStageSeconds = computed(() => {
   return currentTask.value.elapsedSeconds;
 });
 
-const events = computed(() => [...(snapshot.value?.recentLog || [])]
-  .reverse()
-  .map(parseEventLine)
-  .map((item) => ({ ...item, tone: eventTone(item.message) }))
-  .slice(0, 20));
+const events = computed(() => {
+  const occurrences = new Map();
+  return [...(snapshot.value?.recentLog || [])]
+    .reverse()
+    .map(parseEventLine)
+    .slice(0, 20)
+    .map((item) => {
+      const baseKey = `${item.time}-${item.message}`;
+      const occurrence = occurrences.get(baseKey) || 0;
+      occurrences.set(baseKey, occurrence + 1);
+      return {
+        ...item,
+        key: `${baseKey}-${occurrence}`,
+        tone: eventTone(item.message)
+      };
+    });
+});
 
 const anomalyItems = computed(() => {
   if (!snapshot.value) return [];
@@ -226,17 +238,19 @@ onBeforeUnmount(() => clearInterval(timer));
       :connection="store.connection"
     />
 
-    <div v-if="anomalyItems.length" class="anomaly-strip" role="status">
-      <div class="anomaly-label">
-        <span class="anomaly-mark" aria-hidden="true"><TriangleAlert :size="12" :stroke-width="2" /></span>
-        <strong>需要留意</strong>
+    <Transition name="notice">
+      <div v-if="anomalyItems.length" class="anomaly-strip" role="status">
+        <div class="anomaly-label">
+          <span class="anomaly-mark" aria-hidden="true"><TriangleAlert :size="12" :stroke-width="2" /></span>
+          <strong>需要留意</strong>
+        </div>
+        <div class="anomaly-list">
+          <span v-for="(item, index) in anomalyItems" :key="`${item.text}-${index}`" :class="`tone-${item.tone}`">
+            {{ item.text }}
+          </span>
+        </div>
       </div>
-      <div class="anomaly-list">
-        <span v-for="(item, index) in anomalyItems" :key="`${item.text}-${index}`" :class="`tone-${item.tone}`">
-          {{ item.text }}
-        </span>
-      </div>
-    </div>
+    </Transition>
 
     <div class="overview-grid">
       <article class="case-sheet panel">
@@ -289,13 +303,16 @@ onBeforeUnmount(() => clearInterval(timer));
         <div class="panel-title">
           <div>
             <p class="eyebrow">Incoming defects</p>
-            <h2>队列 <span class="queue-count">{{ snapshot?.queue?.count ?? 0 }}</span></h2>
+            <h2>
+              队列
+              <span :key="snapshot?.queue?.count ?? 0" class="queue-count">{{ snapshot?.queue?.count ?? 0 }}</span>
+            </h2>
           </div>
           <span class="badge" :class="snapshot?.queue?.error ? 'badge-danger' : ''">
             {{ snapshot?.queue?.error ? '文件异常' : '按优先级排序' }}
           </span>
         </div>
-        <div v-if="queue.length" class="queue-list">
+        <TransitionGroup v-if="queue.length" name="queue-row" tag="div" class="queue-list">
           <button
             v-for="(item, index) in queue.slice(0, 5)"
             :key="item.serialNumber"
@@ -310,7 +327,7 @@ onBeforeUnmount(() => clearInterval(timer));
             </span>
             <span class="badge">{{ priorityLabel(item.priorityRank) }}</span>
           </button>
-        </div>
+        </TransitionGroup>
         <div v-else class="empty-state queue-empty">
           <div>
             <strong>队列为空</strong>
@@ -338,7 +355,7 @@ onBeforeUnmount(() => clearInterval(timer));
           </span>
           <StatusLamp :tone="card.tone" :show-label="false" />
         </div>
-        <strong>{{ card.value }}</strong>
+        <strong :key="card.value">{{ card.value }}</strong>
         <small>{{ card.detail }}</small>
       </article>
     </section>
@@ -352,8 +369,8 @@ onBeforeUnmount(() => clearInterval(timer));
           </div>
           <span class="muted mono-small">{{ events.length }} / 20</span>
         </div>
-        <div v-if="events.length" class="event-list">
-          <article v-for="(item, index) in events" :key="`${item.time}-${index}`" class="event-row" :class="`tone-${item.tone}`">
+        <TransitionGroup v-if="events.length" name="event-row" tag="div" class="event-list" appear>
+          <article v-for="(item, index) in events" :key="item.key" class="event-row" :class="`tone-${item.tone}`">
             <time>{{ item.time || '—' }}</time>
             <span class="event-signal" aria-hidden="true"></span>
             <p>
@@ -369,7 +386,7 @@ onBeforeUnmount(() => clearInterval(timer));
               </template>
             </p>
           </article>
-        </div>
+        </TransitionGroup>
         <div v-else class="empty-state">
           <div><strong>还没有事件</strong><span>流水线启动后，进度日志会出现在这里。</span></div>
         </div>
@@ -459,6 +476,12 @@ onBeforeUnmount(() => clearInterval(timer));
   height: 2px;
   background: linear-gradient(90deg, var(--signal), rgba(214, 90, 52, 0));
   content: "";
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.view-heading.is-revealed::after {
+  animation: heading-rule 760ms cubic-bezier(0.22, 1, 0.36, 1) 110ms both;
 }
 
 .view-heading h1 {
@@ -505,6 +528,7 @@ onBeforeUnmount(() => clearInterval(timer));
 }
 
 .anomaly-mark {
+  position: relative;
   display: grid;
   place-items: center;
   width: 21px;
@@ -515,6 +539,29 @@ onBeforeUnmount(() => clearInterval(timer));
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 800;
+  animation: anomaly-breathe 2.8s ease-in-out infinite;
+}
+
+.anomaly-mark::after {
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(178, 128, 45, 0.48);
+  border-radius: 50%;
+  content: "";
+  animation: anomaly-ring 2.8s ease-out infinite;
+}
+
+.notice-enter-active,
+.notice-leave-active {
+  transition:
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.notice-enter-from,
+.notice-leave-to {
+  opacity: 0;
+  transform: translateY(-7px);
 }
 
 .anomaly-list {
@@ -554,6 +601,7 @@ onBeforeUnmount(() => clearInterval(timer));
   width: 120px;
   height: 5px;
   background: repeating-linear-gradient(90deg, var(--signal) 0 14px, transparent 14px 21px);
+  animation: case-stripe-drift 8s linear infinite;
 }
 
 .case-head {
@@ -626,6 +674,7 @@ onBeforeUnmount(() => clearInterval(timer));
 }
 
 .empty-orbit {
+  position: relative;
   display: grid;
   place-items: center;
   width: 48px;
@@ -634,6 +683,15 @@ onBeforeUnmount(() => clearInterval(timer));
   border-radius: 50%;
   color: var(--signal);
   font-size: 25px;
+}
+
+.empty-orbit::before {
+  position: absolute;
+  inset: -5px;
+  border: 1px dashed rgba(214, 90, 52, 0.38);
+  border-radius: 50%;
+  content: "";
+  animation: orbit-spin 9s linear infinite;
 }
 
 .case-foot,
@@ -665,6 +723,7 @@ onBeforeUnmount(() => clearInterval(timer));
   font-family: var(--font-mono);
   font-size: 12px;
   vertical-align: 2px;
+  animation: count-tick 360ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .queue-list {
@@ -694,6 +753,14 @@ onBeforeUnmount(() => clearInterval(timer));
   color: var(--signal-dark);
   font-family: var(--font-mono);
   font-size: 10.5px;
+  transition:
+    color var(--transition),
+    transform var(--transition);
+}
+
+.queue-item:hover .queue-rank {
+  color: var(--signal);
+  transform: translateX(2px);
 }
 
 .queue-copy {
@@ -721,6 +788,24 @@ onBeforeUnmount(() => clearInterval(timer));
 .queue-foot {
   justify-content: space-between;
   margin-top: 14px;
+}
+
+.queue-row-enter-active,
+.queue-row-leave-active,
+.queue-row-move {
+  transition:
+    opacity 240ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.queue-row-enter-from {
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.queue-row-leave-to {
+  opacity: 0;
+  transform: translateX(8px);
 }
 
 .health-band {
@@ -778,6 +863,7 @@ onBeforeUnmount(() => clearInterval(timer));
   font-size: 19px;
   text-overflow: ellipsis;
   white-space: nowrap;
+  animation: health-value-tick 320ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .health-card > small {
@@ -812,6 +898,11 @@ onBeforeUnmount(() => clearInterval(timer));
   align-items: baseline;
   padding: 8px 0;
   border-bottom: 1px dashed var(--line);
+  transition: background var(--transition);
+}
+
+.event-row:hover {
+  background: rgba(28, 39, 36, 0.025);
 }
 
 .event-row time {
@@ -861,6 +952,25 @@ onBeforeUnmount(() => clearInterval(timer));
 
 .event-row.tone-danger .event-signal {
   background: var(--danger);
+  animation: event-alert 2.4s ease-out infinite;
+}
+
+.event-row-enter-active,
+.event-row-leave-active,
+.event-row-move {
+  transition:
+    opacity 240ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.event-row-enter-from {
+  opacity: 0;
+  transform: translateX(-8px);
+}
+
+.event-row-leave-to {
+  opacity: 0;
+  transform: translateY(-4px);
 }
 
 .events-foot {
@@ -998,6 +1108,73 @@ onBeforeUnmount(() => clearInterval(timer));
   }
 }
 
+@keyframes heading-rule {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes anomaly-breathe {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(178, 128, 45, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(178, 128, 45, 0.06);
+  }
+}
+
+@keyframes anomaly-ring {
+  0% {
+    opacity: 0.7;
+    transform: scale(0.82);
+  }
+  78%,
+  100% {
+    opacity: 0;
+    transform: scale(1.42);
+  }
+}
+
+@keyframes case-stripe-drift {
+  to {
+    background-position: 42px 0;
+  }
+}
+
+@keyframes orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes count-tick {
+  from {
+    opacity: 0.4;
+    transform: translateY(-4px) scale(0.9);
+  }
+}
+
+@keyframes health-value-tick {
+  from {
+    opacity: 0.45;
+    transform: translateY(3px);
+  }
+}
+
+@keyframes event-alert {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(161, 61, 61, 0.24);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(161, 61, 61, 0);
+  }
+}
+
 @media (max-width: 1120px) {
   .overview-grid,
   .lower-grid {
@@ -1074,13 +1251,21 @@ onBeforeUnmount(() => clearInterval(timer));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .health-card {
+  .health-card,
+  .health-card > strong,
+  .queue-count,
+  .anomaly-mark,
+  .anomaly-mark::after,
+  .case-stripe,
+  .empty-orbit::before,
+  .event-row.tone-danger .event-signal {
     animation: none;
   }
 
   .view-actions .button:hover svg,
   .quick-action:hover:not(:disabled) .quick-action-icon,
-  .quick-action:hover:not(:disabled) .quick-action-arrow {
+  .quick-action:hover:not(:disabled) .quick-action-arrow,
+  .queue-item:hover .queue-rank {
     transform: none;
   }
 }
